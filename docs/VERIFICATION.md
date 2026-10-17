@@ -32,4 +32,4 @@ After the Supabase deployment, the full local verification was repeated: TypeScr
 
 ## GitHub Linux result
 
-[Wallet checks run 39022306999](https://github.com/AdvithGowda11/extrust-testnet-wallet/actions/runs/39022306999) completed successfully for code commit `07151e20f36f90bb70a2248de373071d696c0559`: clean npm install, TypeScript, ESLint, 26 unit tests, production build and 11 browser tests. Total workflow duration: 3 minutes 19 seconds. A later documentation-only run rechecked the completed Supabase deployment record; the next run upgrades the maintained GitHub actions to v7.
+[Wallet checks run 39023976478](https://github.com/AdvithGowda11/extrust-testnet-wallet/actions/runs/39023976478) completed successfully for final code commit `bac8ddb172eaacf0ec0fd4130f1365c7b2c18306`: the v7 checkout and setup-node actions, clean npm install, TypeScript, ESLint, 26 unit tests, production build and 11 browser tests all passed in 3 minutes 19 seconds. GitHub reported only its platform notice that the `ubuntu-latest` label will move to Ubuntu 26.
