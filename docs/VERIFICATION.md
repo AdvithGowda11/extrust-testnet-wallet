@@ -22,6 +22,12 @@ Authenticated Supabase backup CRUD and two-user RLS isolation after deployment; 
 
 ## Connected services follow-up
 
-The configured Supabase project `crypto-wallet-jnnce` was restored from pause. Its public schema was empty. The migration attempt was not executed because automatic approval review hit an account usage limit. `supabase/tests/wallet_backups.sql` is ready for rollback-only ownership checks once the migration can run. Live financial/test-network transfers remain deferred at the user’s request.
+The configured Supabase project `crypto-wallet-jnnce` was restored from pause. After startup completed, the original profiles, wallet_backups and cache tables became visible. The wallet_backups table lacks format_version and still needs the v2 migration. The migration attempt was not executed because automatic approval review hit an account usage limit. `supabase/tests/wallet_backups.sql` is ready for rollback-only ownership checks once the migration can run. Live financial/test-network transfers remain deferred at the user’s request.
 
 A clean publication checkout with no `.env` passed `npm ci --ignore-scripts`, type checking, lint, all 26 unit tests, production build and all 11 Chromium browser tests. The install audit reported zero known vulnerabilities across production and development dependencies.
+
+The first GitHub Actions run exposed an optional `utf-8-validate` peer omitted by npm 11 but required by npm 10. Commit `07151e2` adds the registry-generated lock entry; an isolated npm 10 clean install and audit passed. Supabase security advisors reported only informational no-policy notices on the two unused legacy cache tables; these remain deny-by-default and are not used by this wallet.
+
+## GitHub Linux result
+
+[Wallet checks run 39022306999](https://github.com/AdvithGowda11/extrust-testnet-wallet/actions/runs/39022306999) completed successfully for code commit `07151e20f36f90bb70a2248de373071d696c0559`: clean npm install, TypeScript, ESLint, 26 unit tests, production build and 11 browser tests. Total workflow duration: 3 minutes 19 seconds. GitHub reported a non-blocking runtime deprecation warning for the v4 Actions and a notice about its upcoming ubuntu-latest image update.
