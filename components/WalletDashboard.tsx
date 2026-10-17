@@ -1,5 +1,12 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+} from "react";
 import {
   BlockchainNetwork,
   MultiChainWallet,
@@ -17,6 +24,7 @@ import AddToken from "./AddToken";
 import TransactionHistory from "./TransactionHistory";
 import ExportWallet from "./ExportWallet";
 import CloudBackup from "./CloudBackup";
+import NetworkLogo from "./NetworkLogo";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -69,7 +77,89 @@ export default function WalletDashboard() {
   const generation = useRef(0);
   const running = useRef(-1);
   const failures = useRef(0);
+  const orbitDrag = useRef<{
+    startX: number;
+    startY: number;
+    angle: number;
+    distance: number;
+    dragging: boolean;
+  } | null>(null);
   const account = wallet.accounts[network];
+  const availableNetworks = CHAINS.filter((n) => wallet.accounts[n]);
+  const selectedNetworkIndex = availableNetworks.indexOf(network);
+  function rotateNetwork(direction: number) {
+    if (availableNetworks.length < 2) return;
+    setNetwork((current) => {
+      const currentIndex = availableNetworks.indexOf(current);
+      const next =
+        (currentIndex + direction + availableNetworks.length) %
+        availableNetworks.length;
+      return availableNetworks[next];
+    });
+    setMenuOpen(false);
+  }
+  function orbitPosition(index: number) {
+    const offset =
+      (index - selectedNetworkIndex + availableNetworks.length) %
+      availableNetworks.length;
+    const angle =
+      -Math.PI / 2 + (offset * 2 * Math.PI) / availableNetworks.length;
+    const size = network === availableNetworks[index] ? 64 : 58;
+    return {
+      x: Math.cos(angle) * 110,
+      y: 140 + Math.sin(angle) * 102 - size / 2 - 4,
+    };
+  }
+  function handleOrbitPointerDown(event: PointerEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest(".network-tile, .tray-menu")
+    ) {
+      orbitDrag.current = null;
+      return;
+    }
+    const bounds = event.currentTarget.getBoundingClientRect();
+    orbitDrag.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      angle: Math.atan2(
+        event.clientY - bounds.top - 140,
+        event.clientX - bounds.left - bounds.width / 2,
+      ),
+      distance: 0,
+      dragging: false,
+    };
+  }
+  function handleOrbitPointerMove(event: PointerEvent<HTMLDivElement>) {
+    const drag = orbitDrag.current;
+    if (!drag) return;
+    if (
+      !drag.dragging &&
+      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 8
+    )
+      return;
+    drag.dragging = true;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const angle = Math.atan2(
+      event.clientY - bounds.top - 140,
+      event.clientX - bounds.left - bounds.width / 2,
+    );
+    let delta = angle - drag.angle;
+    if (delta > Math.PI) delta -= Math.PI * 2;
+    if (delta < -Math.PI) delta += Math.PI * 2;
+    drag.angle = angle;
+    drag.distance += delta;
+    const step = Math.PI / 6;
+    while (drag.distance >= step) {
+      rotateNetwork(1);
+      drag.distance -= step;
+    }
+    while (drag.distance <= -step) {
+      rotateNetwork(-1);
+      drag.distance += step;
+    }
+  }
   const shortAddress = account?.address
     ? `${account.address.slice(0, 6)}…${account.address.slice(-4)}`
     : "No account";
@@ -321,13 +411,13 @@ export default function WalletDashboard() {
     return (
       <Screen title="Receive test coins" onBack={back}>
         <div className={`receive-mark ${network}`} aria-hidden="true">
-          {NETWORKS[network].logo}
+          <NetworkLogo network={network} />
         </div>
         <p className="receive-intro">
           Receive {NETWORKS[network].symbol} on {NETWORKS[network].name}
         </p>
         <div className="receive-address">
-          <span className="break">{account?.address}</span>
+          <span className="break financial-data">{account?.address}</span>
           <button onClick={copyAddress}>
             <Copy size={17} aria-hidden="true" /> Copy address
           </button>
@@ -375,7 +465,7 @@ export default function WalletDashboard() {
         </button>
         <div className="wallet-identity">
           <button
-            className="wallet-address-button"
+            className="wallet-address-button financial-data"
             onClick={copyAddress}
             title={account?.address}
           >
@@ -415,8 +505,8 @@ export default function WalletDashboard() {
         aria-label="Selected network balance"
       >
         <p className="wallet-coin-name">{COIN_NAMES[network]}</p>
-        <p className="balance">{displayBalance}</p>
-        <p className="wallet-balance-unit">
+        <p className="balance financial-data">{displayBalance}</p>
+        <p className="wallet-balance-unit financial-data">
           {NETWORKS[network].symbol} <span>· test coins</span>
         </p>
         {(offline || connectionError) && (
@@ -441,10 +531,12 @@ export default function WalletDashboard() {
           </div>
         )}
         {pending !== "0" && (
-          <p className="wallet-pending">Pending net change: {pending} BTC</p>
+          <p className="wallet-pending financial-data">
+            Pending net change: {pending} BTC
+          </p>
         )}
         <div className={`coin-orb ${network}`} aria-hidden="true">
-          <span>{NETWORKS[network].logo}</span>
+          <NetworkLogo network={network} className="coin-logo" />
         </div>
         <div className="wallet-primary-actions">
           <button
@@ -500,42 +592,82 @@ export default function WalletDashboard() {
         <div className="tray-handle" aria-hidden="true" />
         <div className="tray-heading">
           <h2>Networks</h2>
-          <span>Swipe to explore all six</span>
+          <span>Drag around to rotate · tap a coin</span>
         </div>
-        <div className="asset-strip" aria-label="Choose network">
-          {CHAINS.map((n) => (
-            <button
-              key={n}
-              className={`network-tile ${n === network ? "selected" : ""}`}
-              aria-label={`Switch to ${NETWORKS[n].name}`}
-              aria-pressed={n === network}
-              disabled={!wallet.accounts[n]}
-              onClick={() => {
-                setNetwork(n);
-                setMenuOpen(false);
-              }}
-            >
-              <span className={`network-coin ${n}`}>{NETWORKS[n].logo}</span>
-              <span>{COIN_NAMES[n]}</span>
-            </button>
-          ))}
-        </div>
-        <button
-          className="tray-menu"
-          aria-label="Open menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
+        <div
+          className="orbit-stage"
+          aria-label="Circular coin selector"
+          role="group"
+          tabIndex={0}
+          onPointerDown={handleOrbitPointerDown}
+          onPointerMove={handleOrbitPointerMove}
+          onPointerUp={() => {
+            orbitDrag.current = null;
+          }}
+          onPointerCancel={() => {
+            orbitDrag.current = null;
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+              event.preventDefault();
+              rotateNetwork(-1);
+            } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+              event.preventDefault();
+              rotateNetwork(1);
+            }
+          }}
         >
-          <span>
-            <Menu size={22} aria-hidden="true" />
-          </span>
-          Menu
-        </button>
+          {availableNetworks.map((n, index) => {
+            const position = orbitPosition(index);
+            return (
+              <button
+                key={n}
+                className={`network-tile ${n} ${n === network ? "selected" : ""}`}
+                style={
+                  {
+                    "--orbit-x": `${position.x}px`,
+                    "--orbit-y": `${position.y}px`,
+                  } as CSSProperties
+                }
+                aria-label={`Switch to ${NETWORKS[n].name}`}
+                aria-pressed={n === network}
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={() => {
+                  setNetwork(n);
+                  setMenuOpen(false);
+                }}
+              >
+                <span className={`network-coin ${n}`}>
+                  <NetworkLogo network={n} className="network-glyph" />
+                </span>
+                <span>{COIN_NAMES[n]}</span>
+              </button>
+            );
+          })}
+          <button
+            className="tray-menu"
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span>
+              <Menu size={22} aria-hidden="true" />
+            </span>
+            Menu
+          </button>
+        </div>
         <div className="wallet-details">
           <p className="wallet-updated">
-            {updated
-              ? `Last updated ${new Date(updated).toLocaleTimeString()}`
-              : "Connecting to test network…"}
+            {updated ? (
+              <>
+                Last updated{" "}
+                <span className="financial-data">
+                  {new Date(updated).toLocaleTimeString()}
+                </span>
+              </>
+            ) : (
+              "Connecting to test network…"
+            )}
           </p>
           {tokens.length > 0 && (
             <div className="tracked-assets">
@@ -545,9 +677,11 @@ export default function WalletDashboard() {
                   <span className="token-symbol">{t.symbol.slice(0, 1)}</span>
                   <span>
                     <strong>{t.symbol}</strong>
-                    <small className="break">{t.address}</small>
+                    <small className="break financial-data">{t.address}</small>
                   </span>
-                  <strong>{tokenBalances[t.address] ?? "Unavailable"}</strong>
+                  <strong className="financial-data">
+                    {tokenBalances[t.address] ?? "Unavailable"}
+                  </strong>
                   <button
                     onClick={() => {
                       StorageService.removeToken(t);

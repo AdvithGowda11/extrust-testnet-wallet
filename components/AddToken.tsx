@@ -46,6 +46,7 @@ export default function AddToken({
       <label>
         Contract address
         <input
+          className="financial-data"
           disabled={busy}
           value={address}
           onChange={(e) => {
@@ -63,8 +64,8 @@ export default function AddToken({
           <h2>
             {found.name} ({found.symbol})
           </h2>
-          <p>{found.decimals} decimals</p>
-          <p className="break">{found.address}</p>
+          <p className="financial-data">{found.decimals} decimals</p>
+          <p className="break financial-data">{found.address}</p>
           <button
             className="primary"
             onClick={() => {

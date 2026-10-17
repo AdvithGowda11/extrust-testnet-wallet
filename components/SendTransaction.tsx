@@ -12,6 +12,8 @@ import { StorageService } from "@/services/storageService";
 import { NETWORKS, explorerUrl } from "@/config/networks";
 import { errorMessage } from "@/lib/amounts";
 import { Screen, Notice } from "./Screen";
+import NetworkLogo from "./NetworkLogo";
+import { Check, ChevronDown } from "lucide-react";
 export default function SendTransaction({
   wallet,
   network,
@@ -104,7 +106,7 @@ export default function SendTransaction({
             </p>
           </div>
         )}
-        <p className="break">{sent.hash}</p>
+        <p className="break financial-data">{sent.hash}</p>
         <a
           target="_blank"
           rel="noreferrer"
@@ -154,15 +156,15 @@ export default function SendTransaction({
             <dt>Network</dt>
             <dd>{NETWORKS[network].name}</dd>
             <dt>From</dt>
-            <dd className="break">{quote.params.from}</dd>
+            <dd className="break financial-data">{quote.params.from}</dd>
             <dt>To</dt>
-            <dd className="break">{quote.params.to}</dd>
+            <dd className="break financial-data">{quote.params.to}</dd>
             <dt>Amount</dt>
-            <dd>
+            <dd className="financial-data">
               {quote.amount} {quote.symbol}
             </dd>
             <dt>Fee reserve</dt>
-            <dd>
+            <dd className="financial-data">
               {quote.fee} {NETWORKS[network].symbol}
             </dd>
           </dl>
@@ -181,18 +183,90 @@ export default function SendTransaction({
         <>
           <label>
             Asset
-            <select value={token} onChange={(e) => setToken(e.target.value)}>
-              <option value="">{NETWORKS[network].symbol} (native)</option>
-              {tokens.map((t) => (
-                <option key={t.address} value={t.address}>
-                  {t.symbol} · {t.address.slice(0, 10)}…
-                </option>
-              ))}
-            </select>
+            <details className="asset-picker">
+              <summary>
+                <span className={`asset-picker-mark ${network}`}>
+                  {token ? (
+                    tokens.find((t) => t.address === token)?.symbol.slice(0, 1)
+                  ) : (
+                    <NetworkLogo network={network} />
+                  )}
+                </span>
+                <span className="asset-picker-copy">
+                  <strong>
+                    {token
+                      ? tokens.find((t) => t.address === token)?.symbol
+                      : `${NETWORKS[network].symbol} (native)`}
+                  </strong>
+                  <small>
+                    {token ? (
+                      <span className="financial-data">{`${NETWORKS[network].name} · ${token.slice(0, 8)}…`}</span>
+                    ) : (
+                      `${NETWORKS[network].name} · Native asset`
+                    )}
+                  </small>
+                </span>
+                <ChevronDown size={20} aria-hidden="true" />
+              </summary>
+              <div className="asset-options" aria-label="Choose an asset">
+                <button
+                  type="button"
+                  className={!token ? "asset-option selected" : "asset-option"}
+                  aria-pressed={!token}
+                  onClick={(event) => {
+                    setToken("");
+                    event.currentTarget
+                      .closest("details")
+                      ?.removeAttribute("open");
+                  }}
+                >
+                  <span className={`asset-picker-mark ${network}`}>
+                    <NetworkLogo network={network} />
+                  </span>
+                  <span className="asset-picker-copy">
+                    <strong>{NETWORKS[network].symbol} (native)</strong>
+                    <small>{NETWORKS[network].name} · Native asset</small>
+                  </span>
+                  {!token && <Check size={18} aria-hidden="true" />}
+                </button>
+                {tokens.map((item) => (
+                  <button
+                    key={item.address}
+                    type="button"
+                    className={
+                      token === item.address
+                        ? "asset-option selected"
+                        : "asset-option"
+                    }
+                    aria-pressed={token === item.address}
+                    onClick={(event) => {
+                      setToken(item.address);
+                      event.currentTarget
+                        .closest("details")
+                        ?.removeAttribute("open");
+                    }}
+                  >
+                    <span className="asset-picker-mark token-mark">
+                      {item.symbol.slice(0, 1)}
+                    </span>
+                    <span className="asset-picker-copy">
+                      <strong>{item.symbol}</strong>
+                      <small className="financial-data">
+                        {item.address.slice(0, 10)}…
+                      </small>
+                    </span>
+                    {token === item.address && (
+                      <Check size={18} aria-hidden="true" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </details>
           </label>
           <label>
             Recipient address
             <input
+              className="financial-data"
               autoComplete="off"
               spellCheck={false}
               value={recipient}
@@ -202,6 +276,7 @@ export default function SendTransaction({
           <label>
             Amount
             <input
+              className="financial-data"
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

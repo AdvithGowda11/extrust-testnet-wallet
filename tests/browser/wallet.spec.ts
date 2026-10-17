@@ -32,11 +32,20 @@ test("encrypted onboarding, six networks, lock/reload/unlock and accessible rece
   });
   await createWallet(page);
   await expect(page.locator(".balance-card")).toBeVisible();
+  const loadedBinanceFonts = await page.evaluate(async () =>
+    document.fonts.load("16px BinancePlex"),
+  );
+  expect(loadedBinanceFonts.length).toBeGreaterThan(0);
   expect(
     await page
       .locator(".balance")
       .evaluate((el) => getComputedStyle(el).fontFamily),
-  ).toContain("Athelas");
+  ).toContain("BinancePlex");
+  expect(
+    await page
+      .locator(".wallet-address-button")
+      .evaluate((el) => getComputedStyle(el).fontFamily),
+  ).toContain("BinancePlex");
   await expect(page.locator(".wallet-primary-actions")).toBeVisible();
   await expect(page.locator(".balance")).toContainText("0");
   await page.screenshot({
@@ -46,16 +55,127 @@ test("encrypted onboarding, six networks, lock/reload/unlock and accessible rece
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(375);
-  const strip = page.locator(".asset-strip");
-  expect(await strip.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(
-    true,
-  );
-  await page.locator(".network-tile").filter({ hasText: "Ethereum" }).click();
-  await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+  const orbit = page.locator(".orbit-stage");
+  await expect(orbit).toBeVisible();
+  await expect(orbit.locator(".network-tile")).toHaveCount(6);
+  await expect(orbit.locator(".network-logo")).toHaveCount(6);
+  for (const network of [
     "ethereum",
+    "polygon",
+    "binance",
+    "base",
+    "solana",
+    "bitcoin",
+  ]) {
+    const coin = orbit.locator(`.network-tile.${network}`);
+    await coin.click();
+    expect(
+      await coin.evaluate((el) => getComputedStyle(el).backgroundColor),
+    ).toBe("rgba(0, 0, 0, 0)");
+    await expect(coin).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+      network,
+    );
+    await page.waitForTimeout(300);
+    const bounds = await orbit.boundingBox();
+    if (!bounds) throw new Error("Circular coin selector is not laid out");
+    const centers = await orbit.locator(".network-coin").evaluateAll((els) =>
+      els.map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      }),
+    );
+    for (const center of centers) {
+      const radius = Math.hypot(
+        (center.x - (bounds.x + bounds.width / 2)) / 110,
+        (center.y - (bounds.y + 140)) / 102,
+      );
+      expect(radius).toBeCloseTo(1, 1);
+    }
+  }
+  const orbitGeometry = await orbit
+    .locator(".network-coin")
+    .evaluateAll((els) =>
+      els.map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+      }),
+    );
+  const orbitBounds = await orbit.boundingBox();
+  if (!orbitBounds) throw new Error("Circular coin selector is not laid out");
+  expect(orbitGeometry).toHaveLength(6);
+  const centerX = orbitBounds.x + orbitBounds.width / 2;
+  const centerY = orbitBounds.y + 140;
+  for (let i = 0; i < orbitGeometry.length; i += 1) {
+    const point = orbitGeometry[i];
+    expect(point.x).toBeGreaterThanOrEqual(20);
+    expect(point.x).toBeLessThanOrEqual(355);
+    const radius = Math.hypot(
+      (point.x - centerX) / 110,
+      (point.y - centerY) / 102,
+    );
+    expect(radius).toBeCloseTo(1, 1);
+    for (let j = i + 1; j < orbitGeometry.length; j += 1) {
+      const other = orbitGeometry[j];
+      expect(Math.hypot(point.x - other.x, point.y - other.y)).toBeGreaterThan(
+        61,
+      );
+    }
+  }
+  for (const network of [
+    "ethereum",
+    "polygon",
+    "binance",
+    "base",
+    "solana",
+    "bitcoin",
+  ]) {
+    const coin = orbit.locator(`.network-tile.${network}`);
+    await coin.click();
+    await expect(coin).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+      network,
+    );
+  }
+  await page.waitForTimeout(300);
+  const menuBox = await page.locator(".tray-menu").boundingBox();
+  const labelBoxes = await orbit
+    .locator(".network-tile > span:last-child")
+    .evaluateAll((els) =>
+      els.map((el) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+        };
+      }),
+    );
+  if (!menuBox) throw new Error("Wallet menu control is not laid out");
+  for (const label of labelBoxes) {
+    expect(
+      menuBox.x < label.right &&
+        menuBox.x + menuBox.width > label.left &&
+        menuBox.y < label.bottom &&
+        menuBox.y + menuBox.height > label.top,
+    ).toBe(false);
+  }
+  const beforeDrag = await page
+    .getByLabel("Network", { exact: true })
+    .inputValue();
+  const dragBounds = await orbit.boundingBox();
+  if (!dragBounds)
+    throw new Error("Coin selector is not laid out for dragging");
+  const originX = dragBounds.x + dragBounds.width / 2;
+  const originY = dragBounds.y + 140;
+  await page.mouse.move(originX + 40, originY);
+  await page.mouse.down();
+  await page.mouse.move(originX + 27, originY + 48, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.getByLabel("Network", { exact: true })).not.toHaveValue(
+    beforeDrag,
   );
-  await page.locator(".network-tile").filter({ hasText: "Bitcoin" }).click();
-  expect(await strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
   await page.getByLabel("Network", { exact: true }).selectOption("ethereum");
   await page
     .locator(".wallet-primary-actions")

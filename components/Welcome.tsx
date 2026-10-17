@@ -1,6 +1,7 @@
 "use client";
 import { Screen } from "./Screen";
 import { ArrowRight, KeyRound, ShieldCheck } from "lucide-react";
+import NetworkLogo from "./NetworkLogo";
 export default function Welcome({
   onGetStarted,
   onRestore,
@@ -15,7 +16,7 @@ export default function Welcome({
           <ShieldCheck size={17} aria-hidden="true" /> YOUR KEYS. YOUR WALLET.
         </p>
         <div className="welcome-coin coin-orb bitcoin" aria-hidden="true">
-          <span>₿</span>
+          <NetworkLogo network="bitcoin" className="coin-logo" />
         </div>
         <h2>
           Move freely.

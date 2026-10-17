@@ -48,9 +48,11 @@ export default function TransactionHistory({
                     ? "Self transfer"
                     : "Received"}
               </strong>
-              <span>{new Date(tx.timestamp).toLocaleString()}</span>
+              <span className="financial-data">
+                {new Date(tx.timestamp).toLocaleString()}
+              </span>
             </div>
-            <span className="transaction-amount">
+            <span className="transaction-amount financial-data">
               {tx.type === "send" ? "−" : tx.type === "receive" ? "+" : ""}
               {tx.value}{" "}
               <small>{tx.tokenSymbol || NETWORKS[network].symbol}</small>
@@ -58,17 +60,17 @@ export default function TransactionHistory({
           </div>
           <div className="transaction-meta">
             <span className={`status ${tx.status}`}>{tx.status}</span>
-            <p className="break small">
+            <p className="break small financial-data">
               {tx.type === "send" ? "To" : "From"}:{" "}
               {tx.type === "send" ? tx.to : tx.from}
             </p>
           </div>
-          <p className="small muted">
+          <p className="small muted financial-data">
             {tx.fee ? ` · Fee: ${tx.fee} ${NETWORKS[network].symbol}` : ""}
             {tx.confirmations ? ` · ${tx.confirmations} confirmation(s)` : ""}
           </p>
           <a
-            className="break small"
+            className="break small financial-data"
             href={explorerUrl(network, tx.hash)}
             target="_blank"
             rel="noreferrer"
