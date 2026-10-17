@@ -332,6 +332,13 @@ test("wallet controls open settings, backup, exports, and keep the active vault"
   await expect(
     page.getByRole("heading", { name: "Backup and restore" }),
   ).toBeVisible();
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await expect(page.getByLabel("Cloud account password")).toBeVisible();
+  await expect(
+    page.getByText(
+      "New account passwords must contain at least 12 characters.",
+    ),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   const evidenceDownload = page.waitForEvent("download");
   await page

@@ -24,6 +24,7 @@ export default function CloudBackup({
   const [email, setEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [user, setUser] = useState<string | null>(null);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,10 +32,18 @@ export default function CloudBackup({
   const supabase = getSupabase();
   useEffect(() => {
     if (!supabase) return;
-    const sub = supabase.auth.onAuthStateChange((_event, session) =>
-      setUser(session?.user.email || null),
-    );
-    return () => sub.data.subscription.unsubscribe();
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active) setUser(data.session?.user.email || null);
+    });
+    const sub = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user.email || null);
+      if (session) setAwaitingConfirmation(false);
+    });
+    return () => {
+      active = false;
+      sub.data.subscription.unsubscribe();
+    };
   }, [supabase]);
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -151,6 +160,7 @@ export default function CloudBackup({
               Email
               <input
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -169,8 +179,9 @@ export default function CloudBackup({
                 disabled={busy}
                 onClick={() =>
                   run(async () => {
+                    if (!email.trim()) throw new Error("Enter your email");
                     const { error } = await supabase.auth.signInWithPassword({
-                      email,
+                      email: email.trim(),
                       password: authPassword,
                     });
                     if (error) throw error;
@@ -184,13 +195,23 @@ export default function CloudBackup({
                 disabled={busy}
                 onClick={() =>
                   run(async () => {
-                    const { error } = await supabase.auth.signUp({
-                      email,
+                    const normalizedEmail = email.trim();
+                    if (!normalizedEmail) throw new Error("Enter your email");
+                    if (authPassword.length < 12)
+                      throw new Error(
+                        "Use at least 12 characters for the cloud account password",
+                      );
+                    const { data, error } = await supabase.auth.signUp({
+                      email: normalizedEmail,
                       password: authPassword,
+                      options: { emailRedirectTo: window.location.origin },
                     });
                     if (error) throw error;
+                    setAwaitingConfirmation(!data.session);
                     setNotice(
-                      "Account requested. Check your inbox if email confirmation is enabled.",
+                      data.session
+                        ? "Cloud account created and signed in."
+                        : "Confirmation email sent. Open it in this browser, confirm the address, then return here.",
                     );
                     setAuthPassword("");
                   })
@@ -199,6 +220,29 @@ export default function CloudBackup({
                 Create account
               </button>
             </div>
+            {awaitingConfirmation && (
+              <button
+                disabled={busy || !email.trim()}
+                onClick={() =>
+                  run(async () => {
+                    const { error } = await supabase.auth.resend({
+                      type: "signup",
+                      email: email.trim(),
+                      options: { emailRedirectTo: window.location.origin },
+                    });
+                    if (error) throw error;
+                    setNotice("A new confirmation email was sent.");
+                  })
+                }
+              >
+                Resend confirmation email
+              </button>
+            )}
+            <p className="muted">
+              For this project’s default email service, use the email address
+              that belongs to the Supabase project team. New account passwords
+              must contain at least 12 characters.
+            </p>
           </>
         ) : (
           <>
