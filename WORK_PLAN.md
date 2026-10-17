@@ -8,7 +8,7 @@ Only test assets are supported. No AI services or custom cryptography.
 - [x] 4. Solana exact amounts, fee checks, expiry and reconciliation
 - [x] 5. Bitcoin Signet UTXO selection, PSBT signing, fees and change
 - [x] 6. Live native balances/history and tracked ERC-20 event pagination implemented; general contract traces remain outside the wallet scope
-- [ ] 7. Local backup restoration and documentation implemented; Supabase project restored; cloud migration blocked by approval-review usage limit; ownership SQL tests prepared
+- [x] 7. Local backup restoration and documentation implemented; Supabase project restored; cloud migration applied; rollback-only two-user ownership SQL tests passed
 - [x] 8. Automated unit and browser tests, production build, dependency audit (see docs/VERIFICATION.md)
 - [ ] 9. Public-network funding and twelve independently verified transfers on two physical computers — deferred by user
 

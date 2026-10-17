@@ -53,7 +53,7 @@ No finite test suite establishes that nothing can fail. The following boundaries
 23. Lost encrypted backups and forgotten passphrases cannot be recovered by the app.
 24. Browser quota, private mode, site-data deletion and OS failure can prevent persistence. Preserve offline encrypted backups.
 25. A legacy mnemonic cannot reconstruct unrelated imported keys or an undocumented old derivation. Legacy archives preserve bytes; direct legacy cloud restore remains unsupported.
-26. The configured Supabase project was restored from pause. Applying the supplied migration was blocked because automatic approval review hit an account usage limit; the migration was not executed. A rollback-only two-user ownership SQL test is supplied but not run. Email authentication depends on the project configuration.
+26. The configured Supabase project is active and the supplied v2 migration is deployed. Rollback-only two-user SQL tests passed for own-row create/read/update/delete, cross-user isolation, format validation and anonymous denial. Email delivery and confirmation still depend on the project's Auth configuration and the user's reachable email account.
 27. The API rate limiter is per process. Public multi-instance deployments need an edge/shared limiter and operational monitoring.
 28. HTTPS or localhost, modern Web Crypto, Web Locks and supported browsers are required. Mobile/Safari/Firefox coverage is not established by Chromium tests.
 29. Dependency audit results cover known advisories at check time, not future disclosures or a complete code audit.
@@ -63,5 +63,5 @@ No finite test suite establishes that nothing can fail. The following boundaries
 
 - Obtain free funding for both directions on every network without purchasing assets.
 - Run and record all twelve public transactions on two independent computers, verifying balances and explorer receipts.
-- Apply and validate optional cloud RLS with two distinct authenticated users if cloud backup is part of the presentation.
+- Complete one presentation-day sign-up, email confirmation, upload and restore rehearsal with the final email accounts if cloud backup is shown.
 - Resolve the additional asset/history features above if they are required by the project guide; do not present them as implemented.

@@ -18,15 +18,17 @@ Read-only network identity checks succeeded. The Solana funding attempt returned
 
 ## Not verified here
 
-Authenticated Supabase backup CRUD and two-user RLS isolation after deployment; other browser engines/mobile devices; physical second-computer networking; sustained load or hostile-provider testing; independent cryptographic/security audit; twelve explorer-confirmed public transactions. See `docs/LIMITATIONS.md` and the unchecked stages in `WORK_PLAN.md`.
+Presentation-day email sign-up/confirmation and cloud upload/restore with the final accounts; other browser engines/mobile devices; physical second-computer networking; sustained load or hostile-provider testing; independent cryptographic/security audit; twelve explorer-confirmed public transactions. See `docs/LIMITATIONS.md` and the unchecked stages in `WORK_PLAN.md`.
 
 ## Connected services follow-up
 
-The configured Supabase project `crypto-wallet-jnnce` was restored from pause. After startup completed, the original profiles, wallet_backups and cache tables became visible. The wallet_backups table lacks format_version and still needs the v2 migration. The migration attempt was not executed because automatic approval review hit an account usage limit. `supabase/tests/wallet_backups.sql` is ready for rollback-only ownership checks once the migration can run. Live financial/test-network transfers remain deferred at the user’s request.
+The configured Supabase project `crypto-wallet-jnnce` is active and healthy. Migration `upgrade_wallet_backups_v2` (`20261017100422`) added the required format version, forced RLS, removed anonymous access and installed the authenticated ownership policy. The rollback-only assertions in `supabase/tests/wallet_backups.sql` passed against the deployed database for own-row CRUD, cross-user isolation, format validation and anonymous denial; the transaction left zero backup rows and no test users. Post-deployment inspection confirmed `format_version` is required with default `2`, RLS is enabled and forced, anonymous SELECT is denied and authenticated SELECT remains policy-controlled. Live financial/test-network transfers remain deferred at the user’s request.
 
 A clean publication checkout with no `.env` passed `npm ci --ignore-scripts`, type checking, lint, all 26 unit tests, production build and all 11 Chromium browser tests. The install audit reported zero known vulnerabilities across production and development dependencies.
 
 The first GitHub Actions run exposed an optional `utf-8-validate` peer omitted by npm 11 but required by npm 10. Commit `07151e2` adds the registry-generated lock entry; an isolated npm 10 clean install and audit passed. Supabase security advisors reported only informational no-policy notices on the two unused legacy cache tables; these remain deny-by-default and are not used by this wallet.
+
+After the Supabase deployment, the full local verification was repeated: TypeScript, ESLint and all 26 unit tests passed; the production build completed; all 11 Chromium browser tests passed; all six public test-network identities were verified; and `npm audit --omit=dev` reported zero vulnerabilities.
 
 ## GitHub Linux result
 

@@ -38,7 +38,7 @@ Legacy plaintext storage is preserved byte-for-byte in a separate encrypted arch
 
 The transaction journal stores public signed transactions before broadcast. If a response is lost, use **Rebroadcast same signed transaction** after checking status. This resends the same transaction rather than signing a duplicate. An unresolved outgoing transaction blocks a new send from that account. Browser storage must be available and have sufficient space.
 
-Optional Supabase backups require the URL and anonymous key and application of `supabase/migrations/001_wallet_backups.sql`. The migration replaces policies only on the dedicated backup table and enforces ownership. Review it against your database before deployment. Cloud backup integration has not been tested against an authenticated deployed database in this environment. Existing v1 cloud backups are rejected for direct restore to avoid silently changing their account derivation; retain the original database rows and legacy recovery software.
+Optional Supabase backups require the URL, a publishable or legacy anonymous key, and application of `supabase/migrations/001_wallet_backups.sql`. The migration replaces policies only on the dedicated backup table and enforces ownership. It is deployed on the connected project, where rollback-only two-user SQL tests verified own-row CRUD, cross-user isolation, format validation and anonymous denial. Rehearse the final email sign-up and confirmation flow before a presentation because delivery depends on the project's Auth configuration. Existing v1 cloud backups are rejected for direct restore to avoid silently changing their account derivation; retain the original database rows and legacy recovery software.
 
 ## Verification
 
