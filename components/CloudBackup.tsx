@@ -90,10 +90,21 @@ export default function CloudBackup({
     await StorageService.saveWallet(restored, localPassword);
     onWalletRestored();
   }
+  function confirmationRedirect() {
+    const url = new URL(window.location.origin);
+    url.searchParams.set("screen", "cloud-backup");
+    return url.toString();
+  }
   return (
     <Screen title="Backup and restore" onBack={onBack}>
       <ErrorNotice message={error} />
       {notice && <Notice>{notice}</Notice>}
+      <p className="notice">
+        A cloud account stores an encrypted copy of a wallet you already
+        created. It never creates or reveals a 12-word recovery phrase. If this
+        browser already has a wallet, go back and unlock it with its local vault
+        passphrase; you can view its recovery information from the wallet menu.
+      </p>
       <div className="card">
         <h2>Restore an encrypted file</h2>
         <label>
@@ -220,7 +231,7 @@ export default function CloudBackup({
                     const { data, error } = await supabase.auth.signUp({
                       email: normalizedEmail,
                       password: authPassword,
-                      options: { emailRedirectTo: window.location.origin },
+                      options: { emailRedirectTo: confirmationRedirect() },
                     });
                     if (error) throw error;
                     setAwaitingConfirmation(!data.session);
@@ -244,7 +255,7 @@ export default function CloudBackup({
                     const { error } = await supabase.auth.resend({
                       type: "signup",
                       email: email.trim(),
-                      options: { emailRedirectTo: window.location.origin },
+                      options: { emailRedirectTo: confirmationRedirect() },
                     });
                     if (error) throw error;
                     setCloudNotice("A new confirmation email was sent.");

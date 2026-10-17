@@ -411,7 +411,9 @@ test("restore over a locked vault requires confirmation and preserves account ad
   );
   await page.getByRole("button", { name: "Lock", exact: true }).click();
   await page
-    .getByRole("button", { name: "Restore another encrypted backup" })
+    .getByRole("button", {
+      name: "Restore encrypted file or cloud backup",
+    })
     .click();
   await page.getByLabel("Wallet backup file").setInputFiles({
     name: "wallet.json",
@@ -435,4 +437,27 @@ test("restore over a locked vault requires confirmation and preserves account ad
     "data-address",
     originalAddress!,
   );
+});
+
+test("cloud confirmation deep link opens backup instead of the locked vault", async ({
+  page,
+  context,
+}) => {
+  await mockReads(context);
+  await createWallet(page);
+  await page.getByRole("button", { name: "Lock", exact: true }).click();
+  await page.goto("/?screen=cloud-backup");
+  await expect(
+    page.getByRole("heading", { name: "Backup and restore" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "A cloud account stores an encrypted copy of a wallet you already created.",
+    ),
+  ).toBeVisible();
+  await expect(page).toHaveURL("/");
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Unlock wallet" }),
+  ).toBeVisible();
 });

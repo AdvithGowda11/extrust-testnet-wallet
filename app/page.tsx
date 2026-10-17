@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Welcome from "@/components/Welcome";
 import CreateWallet from "@/components/CreateWallet";
 import WalletDashboard from "@/components/WalletDashboard";
@@ -20,8 +20,23 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const cloudBackupRequested = useRef(false);
   const initial = () => {
     try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("screen") === "cloud-backup") {
+        cloudBackupRequested.current = true;
+        url.searchParams.delete("screen");
+        window.history.replaceState(
+          null,
+          "",
+          `${url.pathname}${url.search}${url.hash}`,
+        );
+      }
+      if (cloudBackupRequested.current) {
+        setPage("restore");
+        return;
+      }
       setPage(
         StorageService.hasLegacy()
           ? "legacy"
@@ -105,7 +120,10 @@ export default function Home() {
     return (
       <CloudBackup
         wallet={null}
-        onBack={initial}
+        onBack={() => {
+          cloudBackupRequested.current = false;
+          initial();
+        }}
         onWalletRestored={() => setPage("dashboard")}
       />
     );
@@ -182,7 +200,7 @@ export default function Home() {
       {page === "unlock" && (
         <>
           <button onClick={() => setPage("restore")}>
-            Restore another encrypted backup
+            Restore encrypted file or cloud backup
           </button>
           <button
             onClick={() =>
@@ -194,6 +212,10 @@ export default function Home() {
           >
             Download locked encrypted vault
           </button>
+          <p className="muted">
+            Cloud sign-in manages encrypted backups. It does not create a new
+            wallet or a new 12-word recovery phrase.
+          </p>
         </>
       )}
     </Screen>
