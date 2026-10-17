@@ -27,6 +27,8 @@ export default function CloudBackup({
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [cloudError, setCloudError] = useState("");
+  const [cloudNotice, setCloudNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const supabase = getSupabase();
@@ -53,6 +55,18 @@ export default function CloudBackup({
       await action();
     } catch (e) {
       setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function runCloud(action: () => Promise<void>) {
+    setBusy(true);
+    setCloudError("");
+    setCloudNotice("");
+    try {
+      await action();
+    } catch (e) {
+      setCloudError(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -149,6 +163,8 @@ export default function CloudBackup({
       </div>
       <div className="card">
         <h2>Optional encrypted cloud backup</h2>
+        <ErrorNotice message={cloudError} />
+        {cloudNotice && <Notice>{cloudNotice}</Notice>}
         {!supabase ? (
           <p>
             Cloud backup is unavailable on this installation. Encrypted file
@@ -166,7 +182,7 @@ export default function CloudBackup({
               />
             </label>
             <label>
-              Cloud account password
+              Wallet cloud password (not your Google password)
               <input
                 type="password"
                 autoComplete="current-password"
@@ -178,7 +194,7 @@ export default function CloudBackup({
               <button
                 disabled={busy}
                 onClick={() =>
-                  run(async () => {
+                  runCloud(async () => {
                     if (!email.trim()) throw new Error("Enter your email");
                     const { error } = await supabase.auth.signInWithPassword({
                       email: email.trim(),
@@ -194,7 +210,7 @@ export default function CloudBackup({
               <button
                 disabled={busy}
                 onClick={() =>
-                  run(async () => {
+                  runCloud(async () => {
                     const normalizedEmail = email.trim();
                     if (!normalizedEmail) throw new Error("Enter your email");
                     if (authPassword.length < 12)
@@ -208,7 +224,7 @@ export default function CloudBackup({
                     });
                     if (error) throw error;
                     setAwaitingConfirmation(!data.session);
-                    setNotice(
+                    setCloudNotice(
                       data.session
                         ? "Cloud account created and signed in."
                         : "Confirmation email sent. Open it in this browser, confirm the address, then return here.",
@@ -217,21 +233,21 @@ export default function CloudBackup({
                   })
                 }
               >
-                Create account
+                Create wallet cloud account
               </button>
             </div>
             {awaitingConfirmation && (
               <button
                 disabled={busy || !email.trim()}
                 onClick={() =>
-                  run(async () => {
+                  runCloud(async () => {
                     const { error } = await supabase.auth.resend({
                       type: "signup",
                       email: email.trim(),
                       options: { emailRedirectTo: window.location.origin },
                     });
                     if (error) throw error;
-                    setNotice("A new confirmation email was sent.");
+                    setCloudNotice("A new confirmation email was sent.");
                   })
                 }
               >
@@ -239,9 +255,10 @@ export default function CloudBackup({
               </button>
             )}
             <p className="muted">
-              For this project’s default email service, use the email address
-              that belongs to the Supabase project team. New account passwords
-              must contain at least 12 characters.
+              Your Google login and Google password do not work here. Use the
+              Gmail address that belongs to the Supabase project team, then
+              create a separate wallet cloud password with at least 12
+              characters.
             </p>
           </>
         ) : (
@@ -250,10 +267,10 @@ export default function CloudBackup({
             <button
               disabled={busy}
               onClick={() =>
-                run(async () => {
+                runCloud(async () => {
                   await supabase.auth.signOut();
                   setPassword("");
-                  setNotice("Cloud account signed out.");
+                  setCloudNotice("Cloud account signed out.");
                 })
               }
             >
@@ -263,7 +280,7 @@ export default function CloudBackup({
               <button
                 disabled={busy}
                 onClick={() =>
-                  run(async () => {
+                  runCloud(async () => {
                     if (
                       !window.confirm(
                         "Replace your existing cloud backup with this wallet?",
@@ -275,7 +292,7 @@ export default function CloudBackup({
                       headers: await headers(),
                       body: StorageService.encryptedVault(),
                     });
-                    setNotice(
+                    setCloudNotice(
                       "Encrypted wallet saved. Its passphrase is your current local vault passphrase.",
                     );
                   })
@@ -287,7 +304,7 @@ export default function CloudBackup({
             <button
               disabled={busy || localPassword.length < 12}
               onClick={() =>
-                run(async () => {
+                runCloud(async () => {
                   const { backup } = await requestJson("/api/backup", {
                     headers: await headers(),
                   });
@@ -302,7 +319,7 @@ export default function CloudBackup({
               className="danger"
               disabled={busy}
               onClick={() =>
-                run(async () => {
+                runCloud(async () => {
                   if (
                     !window.confirm(
                       "Delete the cloud copy? This cannot be undone.",
@@ -313,7 +330,7 @@ export default function CloudBackup({
                     method: "DELETE",
                     headers: await headers(),
                   });
-                  setNotice("Cloud backup deleted.");
+                  setCloudNotice("Cloud backup deleted.");
                 })
               }
             >

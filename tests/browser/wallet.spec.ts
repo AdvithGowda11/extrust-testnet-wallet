@@ -333,11 +333,21 @@ test("wallet controls open settings, backup, exports, and keep the active vault"
     page.getByRole("heading", { name: "Backup and restore" }),
   ).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
-  await expect(page.getByLabel("Cloud account password")).toBeVisible();
   await expect(
-    page.getByText(
-      "New account passwords must contain at least 12 characters.",
-    ),
+    page.getByLabel("Wallet cloud password (not your Google password)"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Your Google login and Google password do not work here."),
+  ).toBeVisible();
+  await page.getByLabel("Email").fill("wallet-owner@example.com");
+  await page
+    .getByLabel("Wallet cloud password (not your Google password)")
+    .fill("too-short");
+  await page
+    .getByRole("button", { name: "Create wallet cloud account" })
+    .click();
+  await expect(
+    page.getByText("Use at least 12 characters for the cloud account password"),
   ).toBeVisible();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   const evidenceDownload = page.waitForEvent("download");
