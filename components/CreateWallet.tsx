@@ -1,0 +1,167 @@
+"use client";
+import { useState } from "react";
+import { WalletService } from "@/services/walletService";
+import { StorageService } from "@/services/storageService";
+import { BlockchainNetwork } from "@/types";
+import { CHAINS, NETWORKS } from "@/config/networks";
+import { errorMessage } from "@/lib/amounts";
+import { Screen, ErrorNotice } from "./Screen";
+export default function CreateWallet({
+  onWalletCreated,
+  onBack,
+}: {
+  onWalletCreated: () => void;
+  onBack: () => void;
+}) {
+  const [mode, setMode] = useState<"create" | "phrase" | "key">("create");
+  const [phrase, setPhrase] = useState("");
+  const [secret, setSecret] = useState("");
+  const [network, setNetwork] = useState<BlockchainNetwork>("ethereum");
+  const [password, setPassword] = useState("");
+  const [repeat, setRepeat] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function save() {
+    setError("");
+    setBusy(true);
+    try {
+      if (password !== repeat) throw new Error("Passphrases do not match");
+      if (!confirm)
+        throw new Error("Confirm that you saved your recovery information");
+      const wallet =
+        mode === "key"
+          ? WalletService.fromPrivateKey(secret, network)
+          : WalletService.importWallet(phrase);
+      await StorageService.saveWallet(wallet, password);
+      setSecret("");
+      setPhrase("");
+      setPassword("");
+      onWalletCreated();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Screen title="Create or import" onBack={onBack}>
+      <label>
+        Wallet source
+        <select
+          value={mode}
+          disabled={busy}
+          onChange={(e) => {
+            setMode(e.target.value as typeof mode);
+            setPhrase("");
+            setSecret("");
+            setConfirm(false);
+            setError("");
+          }}
+        >
+          <option value="create">New recovery phrase</option>
+          <option value="phrase">Import recovery phrase</option>
+          <option value="key">Import private key</option>
+        </select>
+      </label>
+      {mode === "create" ? (
+        <>
+          <button
+            disabled={busy || !!phrase}
+            onClick={() => setPhrase(WalletService.generateMnemonic())}
+          >
+            Generate recovery phrase
+          </button>
+          {phrase && (
+            <div className="secret" aria-label="Recovery phrase">
+              {phrase}
+            </div>
+          )}
+        </>
+      ) : mode === "phrase" ? (
+        <label>
+          Recovery phrase
+          <textarea
+            autoComplete="off"
+            spellCheck={false}
+            value={phrase}
+            onChange={(e) => setPhrase(e.target.value)}
+          />
+        </label>
+      ) : (
+        <>
+          <label>
+            Network
+            <select
+              value={network}
+              onChange={(e) => setNetwork(e.target.value as BlockchainNetwork)}
+            >
+              {CHAINS.map((n) => (
+                <option key={n} value={n}>
+                  {NETWORKS[n].name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Private key
+            <input
+              type="password"
+              autoComplete="off"
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+            />
+          </label>
+          <p className="muted">
+            Bitcoin: compressed test-network WIF or hex; imported as native
+            SegWit. EVM keys apply to all four EVM test networks.
+          </p>
+        </>
+      )}
+      <p className="notice">
+        Write down your recovery phrase or imported key. The local passphrase
+        encrypts this browser’s copy; it cannot recover a lost wallet.
+      </p>
+      <label>
+        Local vault passphrase
+        <input
+          type="password"
+          autoComplete="new-password"
+          minLength={12}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </label>
+      <label>
+        Repeat passphrase
+        <input
+          type="password"
+          autoComplete="new-password"
+          value={repeat}
+          onChange={(e) => setRepeat(e.target.value)}
+        />
+      </label>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={confirm}
+          onChange={(e) => setConfirm(e.target.checked)}
+        />
+        I saved my recovery information and am using test assets only.
+      </label>
+      <ErrorNotice message={error} />
+      <button
+        className="primary"
+        disabled={
+          busy ||
+          password.length < 12 ||
+          !confirm ||
+          !(mode === "key" ? secret : phrase)
+        }
+        onClick={save}
+      >
+        {busy ? "Encrypting…" : "Save encrypted wallet"}
+      </button>
+    </Screen>
+  );
+}

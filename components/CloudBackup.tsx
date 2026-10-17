@@ -1,0 +1,283 @@
+"use client";
+import { useEffect, useState } from "react";
+import { MultiChainWallet } from "@/types";
+import { StorageService } from "@/services/storageService";
+import { BackupService } from "@/services/backupService";
+import { WalletService } from "@/services/walletService";
+import { getSupabase } from "@/lib/supabase/client";
+import { requestJson } from "@/services/blockchainService";
+import { Screen, ErrorNotice, Notice } from "./Screen";
+import { errorMessage } from "@/lib/amounts";
+export default function CloudBackup({
+  wallet,
+  onBack,
+  onWalletRestored,
+}: {
+  wallet: MultiChainWallet | null;
+  onBack: () => void;
+  onWalletRestored: () => void;
+}) {
+  const [file, setFile] = useState("");
+  const [password, setPassword] = useState("");
+  const [localPassword, setLocalPassword] = useState("");
+  const [repeat, setRepeat] = useState("");
+  const [email, setEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [user, setUser] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const supabase = getSupabase();
+  useEffect(() => {
+    if (!supabase) return;
+    const sub = supabase.auth.onAuthStateChange((_event, session) =>
+      setUser(session?.user.email || null),
+    );
+    return () => sub.data.subscription.unsubscribe();
+  }, [supabase]);
+  async function run(action: () => Promise<void>) {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await action();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function headers() {
+    const session = await supabase?.auth.getSession();
+    const token = session?.data.session?.access_token;
+    if (!token) throw new Error("Sign in to cloud backup first");
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+  }
+  async function restore(raw: string) {
+    if (StorageService.hasWallet() && !confirm)
+      throw new Error("Confirm replacement before restoring");
+    if (localPassword !== repeat)
+      throw new Error("Local passphrases do not match");
+    const restored = await BackupService.decrypt(JSON.parse(raw), password);
+    WalletService.validateWallet(restored);
+    await StorageService.saveWallet(restored, localPassword);
+    onWalletRestored();
+  }
+  return (
+    <Screen title="Backup and restore" onBack={onBack}>
+      <ErrorNotice message={error} />
+      {notice && <Notice>{notice}</Notice>}
+      <div className="card">
+        <h2>Restore an encrypted file</h2>
+        <label>
+          Wallet backup file
+          <input
+            type="file"
+            accept="application/json,.json"
+            disabled={busy}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size > 100000) {
+                setError("File is too large");
+                return;
+              }
+              setFile(await f.text());
+            }}
+          />
+        </label>
+        <label>
+          Backup passphrase
+          <input
+            type="password"
+            autoComplete="off"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+        <label>
+          New local vault passphrase
+          <input
+            type="password"
+            minLength={12}
+            value={localPassword}
+            onChange={(e) => setLocalPassword(e.target.value)}
+          />
+        </label>
+        <label>
+          Repeat local passphrase
+          <input
+            type="password"
+            value={repeat}
+            onChange={(e) => setRepeat(e.target.value)}
+          />
+        </label>
+        {StorageService.hasWallet() && (
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={confirm}
+              onChange={(e) => setConfirm(e.target.checked)}
+            />
+            I exported my current wallet and want to replace this browser’s
+            active wallet.
+          </label>
+        )}
+        <button
+          disabled={busy || !file || localPassword.length < 12}
+          onClick={() => run(() => restore(file))}
+        >
+          Restore file
+        </button>
+        <p className="muted">
+          Old mainnet archives are preserved exports, not test-network wallets.
+          Their original keys are not re-derived.
+        </p>
+      </div>
+      <div className="card">
+        <h2>Optional encrypted cloud backup</h2>
+        {!supabase ? (
+          <p>
+            Cloud backup is unavailable on this installation. Encrypted file
+            export and restore work without an account.
+          </p>
+        ) : !user ? (
+          <>
+            <label>
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+            <label>
+              Cloud account password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+              />
+            </label>
+            <div className="row">
+              <button
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    const { error } = await supabase.auth.signInWithPassword({
+                      email,
+                      password: authPassword,
+                    });
+                    if (error) throw error;
+                    setAuthPassword("");
+                  })
+                }
+              >
+                Sign in
+              </button>
+              <button
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    const { error } = await supabase.auth.signUp({
+                      email,
+                      password: authPassword,
+                    });
+                    if (error) throw error;
+                    setNotice(
+                      "Account requested. Check your inbox if email confirmation is enabled.",
+                    );
+                    setAuthPassword("");
+                  })
+                }
+              >
+                Create account
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p>{user}</p>
+            <button
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  await supabase.auth.signOut();
+                  setPassword("");
+                  setNotice("Cloud account signed out.");
+                })
+              }
+            >
+              Sign out of cloud account
+            </button>
+            {wallet && (
+              <button
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    if (
+                      !window.confirm(
+                        "Replace your existing cloud backup with this wallet?",
+                      )
+                    )
+                      return;
+                    await requestJson("/api/backup", {
+                      method: "POST",
+                      headers: await headers(),
+                      body: StorageService.encryptedVault(),
+                    });
+                    setNotice(
+                      "Encrypted wallet saved. Its passphrase is your current local vault passphrase.",
+                    );
+                  })
+                }
+              >
+                Upload current encrypted vault
+              </button>
+            )}
+            <button
+              disabled={busy || localPassword.length < 12}
+              onClick={() =>
+                run(async () => {
+                  const { backup } = await requestJson("/api/backup", {
+                    headers: await headers(),
+                  });
+                  if (!backup) throw new Error("No cloud backup found");
+                  await restore(JSON.stringify(backup));
+                })
+              }
+            >
+              Restore cloud backup with passphrases above
+            </button>
+            <button
+              className="danger"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  if (
+                    !window.confirm(
+                      "Delete the cloud copy? This cannot be undone.",
+                    )
+                  )
+                    return;
+                  await requestJson("/api/backup", {
+                    method: "DELETE",
+                    headers: await headers(),
+                  });
+                  setNotice("Cloud backup deleted.");
+                })
+              }
+            >
+              Delete cloud backup
+            </button>
+          </>
+        )}
+      </div>
+    </Screen>
+  );
+}

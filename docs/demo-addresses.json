@@ -1,0 +1,66 @@
+{
+  "a": {
+    "ethereum": {
+      "network": "Ethereum Sepolia",
+      "address": "0x2555832bCd02026381ED088Ab384E8052a3765e9",
+      "faucet": "https://portal.cdp.coinbase.com/products/faucet"
+    },
+    "polygon": {
+      "network": "Polygon Amoy",
+      "address": "0x2555832bCd02026381ED088Ab384E8052a3765e9",
+      "faucet": "https://faucet.polygon.technology/"
+    },
+    "binance": {
+      "network": "BNB Testnet",
+      "address": "0x2555832bCd02026381ED088Ab384E8052a3765e9",
+      "faucet": "https://docs.bnbchain.org/bnb-smart-chain/developers/faucet/"
+    },
+    "base": {
+      "network": "Base Sepolia",
+      "address": "0x2555832bCd02026381ED088Ab384E8052a3765e9",
+      "faucet": "https://portal.cdp.coinbase.com/products/faucet"
+    },
+    "solana": {
+      "network": "Solana Devnet",
+      "address": "EA5oh5sphgSUPSTDJFzQCzrKP2H65sXXtyEmH6SV8yeX",
+      "faucet": "https://faucet.solana.com/"
+    },
+    "bitcoin": {
+      "network": "Bitcoin Signet",
+      "address": "tb1qlw02uva67f5l2p04a0dd7atwfhzye9c20u5gkl",
+      "faucet": "https://signetfaucet.com/"
+    }
+  },
+  "b": {
+    "ethereum": {
+      "network": "Ethereum Sepolia",
+      "address": "0x14f97B971e44f37ab9D251577259d52a62D6466b",
+      "faucet": "https://portal.cdp.coinbase.com/products/faucet"
+    },
+    "polygon": {
+      "network": "Polygon Amoy",
+      "address": "0x14f97B971e44f37ab9D251577259d52a62D6466b",
+      "faucet": "https://faucet.polygon.technology/"
+    },
+    "binance": {
+      "network": "BNB Testnet",
+      "address": "0x14f97B971e44f37ab9D251577259d52a62D6466b",
+      "faucet": "https://docs.bnbchain.org/bnb-smart-chain/developers/faucet/"
+    },
+    "base": {
+      "network": "Base Sepolia",
+      "address": "0x14f97B971e44f37ab9D251577259d52a62D6466b",
+      "faucet": "https://portal.cdp.coinbase.com/products/faucet"
+    },
+    "solana": {
+      "network": "Solana Devnet",
+      "address": "8YUbevStMrHwjUYScdT5sPzsCHbxjhQtwJ6xnNmii92R",
+      "faucet": "https://faucet.solana.com/"
+    },
+    "bitcoin": {
+      "network": "Bitcoin Signet",
+      "address": "tb1qzf2lpp5s2rdmtnfvzjtpv0yfcgc458g77v5puc",
+      "faucet": "https://signetfaucet.com/"
+    }
+  }
+}
