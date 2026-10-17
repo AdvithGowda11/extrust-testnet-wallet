@@ -1,18 +1,26 @@
 import { test, expect, BrowserContext } from "@playwright/test";
 import { createWallet, password } from "./helpers";
-async function mockReads(context: BrowserContext) {
+async function mockReads(context: BrowserContext, historyNotice?: string) {
   await context.route("**/api/balance/**", (route) =>
     route.fulfill({ json: { balance: "0", pending: "0" } }),
   );
   await context.route("**/api/tx-history/**", (route) =>
-    route.fulfill({ json: { transactions: [] } }),
+    route.fulfill({
+      json: {
+        transactions: [],
+        ...(historyNotice ? { notice: historyNotice } : {}),
+      },
+    }),
   );
 }
 test("encrypted onboarding, six networks, lock/reload/unlock and accessible receive screen", async ({
   page,
   context,
 }) => {
-  await mockReads(context);
+  await mockReads(
+    context,
+    "Live native activity from blocks 50415353–50415364. Load older to scan earlier blocks.",
+  );
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 375, height: 812 });
@@ -32,6 +40,14 @@ test("encrypted onboarding, six networks, lock/reload/unlock and accessible rece
   });
   await createWallet(page);
   await expect(page.locator(".balance-card")).toBeVisible();
+  const historyDetails = page.locator(".history-note");
+  await expect(historyDetails).toBeVisible();
+  await expect(historyDetails).not.toHaveJSProperty("open", true);
+  await expect(historyDetails.locator("p")).toBeHidden();
+  await historyDetails.locator("summary").click();
+  await expect(historyDetails.locator("p")).toContainText("50415353–50415364");
+  await historyDetails.locator("summary").click();
+  await expect(historyDetails.locator("p")).toBeHidden();
   const loadedBinanceFonts = await page.evaluate(async () =>
     document.fonts.load("16px BinancePlex"),
   );
@@ -169,9 +185,11 @@ test("encrypted onboarding, six networks, lock/reload/unlock and accessible rece
     throw new Error("Coin selector is not laid out for dragging");
   const originX = dragBounds.x + dragBounds.width / 2;
   const originY = dragBounds.y + 140;
-  await page.mouse.move(originX + 40, originY);
+  // Start outside the centered menu and sweep across the empty inner orbit.
+  // The earlier path ended on the lower coin and could be treated as a tap.
+  await page.mouse.move(originX + 60, originY);
   await page.mouse.down();
-  await page.mouse.move(originX + 27, originY + 48, { steps: 6 });
+  await page.mouse.move(originX, originY - 60, { steps: 8 });
   await page.mouse.up();
   await expect(page.getByLabel("Network", { exact: true })).not.toHaveValue(
     beforeDrag,

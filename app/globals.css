@@ -989,6 +989,40 @@ dd {
   border-radius: 15px;
   background: #fffdfa;
 }
+.history-note {
+  margin: -4px 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.history-note summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #918a84;
+  font-size: 0.72rem;
+  font-weight: 600;
+  list-style: none;
+}
+.history-note summary::-webkit-details-marker {
+  display: none;
+}
+.history-note summary svg {
+  transition: transform 160ms ease;
+}
+.history-note[open] summary svg {
+  transform: rotate(180deg);
+}
+.history-note > p {
+  width: auto;
+  margin: 7px 0 0;
+  padding: 9px 12px;
+  border-left: 2px solid #e5c5a5;
+  background: #fffaf5;
+  color: #81776d;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
 .transaction + .transaction {
   margin-top: 8px;
 }

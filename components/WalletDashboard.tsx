@@ -67,6 +67,7 @@ export default function WalletDashboard() {
   const [offline, setOffline] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [notice, setNotice] = useState("");
+  const [historyNotice, setHistoryNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [tokenCursors, setTokenCursors] = useState<
     Record<string, number | undefined>
@@ -248,7 +249,7 @@ export default function WalletDashboard() {
         StorageService.mergeTransactions(merged);
         setTransactions(merged);
         setCursor(history.nextCursor);
-        setNotice(history.notice || "");
+        setHistoryNotice(history.notice || "");
         setHistoryError("");
       } catch (e) {
         if (id === generation.current) setHistoryError(errorMessage(e));
@@ -296,6 +297,7 @@ export default function WalletDashboard() {
     setConnectionError("");
     setHistoryError("");
     setNotice("");
+    setHistoryNotice("");
     setUpdated(null);
     setCursor(undefined);
     setTokenCursors({});
@@ -352,7 +354,7 @@ export default function WalletDashboard() {
         StorageService.updateTransaction(tx);
       setTransactions((t) => mergeHistory(t, result.transactions));
       setCursor(result.nextCursor);
-      setNotice(result.notice || "");
+      setHistoryNotice(result.notice || "");
     } catch (e) {
       if (id === generation.current) setHistoryError(errorMessage(e));
     } finally {
@@ -737,6 +739,7 @@ export default function WalletDashboard() {
           <TransactionHistory
             network={network}
             transactions={transactions}
+            historyNotice={historyNotice}
             onRetry={async (tx) => {
               setBusy(true);
               try {

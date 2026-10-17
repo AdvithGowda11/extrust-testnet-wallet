@@ -5,15 +5,18 @@ import {
   ArrowDownLeft,
   ArrowRightLeft,
   ArrowUpRight,
+  ChevronDown,
   ExternalLink,
 } from "lucide-react";
 export default function TransactionHistory({
   transactions,
   network,
+  historyNotice,
   onRetry,
 }: {
   transactions: Transaction[];
   network: BlockchainNetwork;
+  historyNotice?: string;
   onRetry?: (tx: Transaction) => void;
 }) {
   return (
@@ -22,6 +25,14 @@ export default function TransactionHistory({
         <h2>Activity</h2>
         <span className="section-overline">RECENT TRANSFERS</span>
       </div>
+      {historyNotice && (
+        <details className="history-note">
+          <summary>
+            History details <ChevronDown size={14} aria-hidden="true" />
+          </summary>
+          <p>{historyNotice}</p>
+        </details>
+      )}
       {!transactions.length && (
         <p className="muted">No activity in the loaded history.</p>
       )}
