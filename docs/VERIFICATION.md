@@ -26,10 +26,10 @@ The configured Supabase project `crypto-wallet-jnnce` is active and healthy. Mig
 
 A clean publication checkout with no `.env` passed `npm ci --ignore-scripts`, type checking, lint, all 26 unit tests, production build and all 11 Chromium browser tests. The install audit reported zero known vulnerabilities across production and development dependencies.
 
-The first GitHub Actions run exposed an optional `utf-8-validate` peer omitted by npm 11 but required by npm 10. Commit `07151e2` adds the registry-generated lock entry; an isolated npm 10 clean install and audit passed. Supabase security advisors reported only informational no-policy notices on the two unused legacy cache tables; these remain deny-by-default and are not used by this wallet.
+The first GitHub Actions run exposed an optional `utf-8-validate` peer omitted by npm 11 but required by npm 10. Commit `07151e2` adds the registry-generated lock entry; an isolated npm 10 clean install and audit passed. The workflow now uses the Node 24-based v7 checkout and setup-node actions. Supabase security advisors reported only informational no-policy notices on the two unused legacy cache tables; these remain deny-by-default and are not used by this wallet.
 
 After the Supabase deployment, the full local verification was repeated: TypeScript, ESLint and all 26 unit tests passed; the production build completed; all 11 Chromium browser tests passed; all six public test-network identities were verified; and `npm audit --omit=dev` reported zero vulnerabilities.
 
 ## GitHub Linux result
 
-[Wallet checks run 39022306999](https://github.com/AdvithGowda11/extrust-testnet-wallet/actions/runs/39022306999) completed successfully for code commit `07151e20f36f90bb70a2248de373071d696c0559`: clean npm install, TypeScript, ESLint, 26 unit tests, production build and 11 browser tests. Total workflow duration: 3 minutes 19 seconds. GitHub reported a non-blocking runtime deprecation warning for the v4 Actions and a notice about its upcoming ubuntu-latest image update.
+[Wallet checks run 39022306999](https://github.com/AdvithGowda11/extrust-testnet-wallet/actions/runs/39022306999) completed successfully for code commit `07151e20f36f90bb70a2248de373071d696c0559`: clean npm install, TypeScript, ESLint, 26 unit tests, production build and 11 browser tests. Total workflow duration: 3 minutes 19 seconds. A later documentation-only run rechecked the completed Supabase deployment record; the next run upgrades the maintained GitHub actions to v7.
