@@ -1,6 +1,12 @@
 "use client";
 import { Transaction, BlockchainNetwork } from "@/types";
 import { explorerUrl, NETWORKS } from "@/config/networks";
+import {
+  ArrowDownLeft,
+  ArrowRightLeft,
+  ArrowUpRight,
+  ExternalLink,
+} from "lucide-react";
 export default function TransactionHistory({
   transactions,
   network,
@@ -12,7 +18,10 @@ export default function TransactionHistory({
 }) {
   return (
     <section aria-label="Transaction history">
-      <h2>Activity</h2>
+      <div className="section-heading">
+        <h2>Activity</h2>
+        <span className="section-overline">RECENT TRANSFERS</span>
+      </div>
       {!transactions.length && (
         <p className="muted">No activity in the loaded history.</p>
       )}
@@ -21,25 +30,40 @@ export default function TransactionHistory({
           className="transaction"
           key={`${tx.hash}:${tx.tokenAddress || ""}:${i}`}
         >
-          <div className="row">
-            <strong>
-              {tx.type === "send"
-                ? "Sent"
-                : tx.type === "self"
-                  ? "Self transfer"
-                  : "Received"}
-            </strong>
-            <span className={`status ${tx.status}`}>{tx.status}</span>
+          <div className="transaction-main">
+            <span className={`transaction-icon ${tx.type}`} aria-hidden="true">
+              {tx.type === "send" ? (
+                <ArrowUpRight size={20} />
+              ) : tx.type === "self" ? (
+                <ArrowRightLeft size={20} />
+              ) : (
+                <ArrowDownLeft size={20} />
+              )}
+            </span>
+            <div className="transaction-summary">
+              <strong>
+                {tx.type === "send"
+                  ? "Sent"
+                  : tx.type === "self"
+                    ? "Self transfer"
+                    : "Received"}
+              </strong>
+              <span>{new Date(tx.timestamp).toLocaleString()}</span>
+            </div>
+            <span className="transaction-amount">
+              {tx.type === "send" ? "−" : tx.type === "receive" ? "+" : ""}
+              {tx.value}{" "}
+              <small>{tx.tokenSymbol || NETWORKS[network].symbol}</small>
+            </span>
           </div>
-          <p className="amount">
-            {tx.value} {tx.tokenSymbol || NETWORKS[network].symbol}
-          </p>
-          <p className="break small">
-            {tx.type === "send" ? "To" : "From"}:{" "}
-            {tx.type === "send" ? tx.to : tx.from}
-          </p>
+          <div className="transaction-meta">
+            <span className={`status ${tx.status}`}>{tx.status}</span>
+            <p className="break small">
+              {tx.type === "send" ? "To" : "From"}:{" "}
+              {tx.type === "send" ? tx.to : tx.from}
+            </p>
+          </div>
           <p className="small muted">
-            {new Date(tx.timestamp).toLocaleString()}
             {tx.fee ? ` · Fee: ${tx.fee} ${NETWORKS[network].symbol}` : ""}
             {tx.confirmations ? ` · ${tx.confirmations} confirmation(s)` : ""}
           </p>
@@ -49,9 +73,16 @@ export default function TransactionHistory({
             target="_blank"
             rel="noreferrer"
           >
-            {tx.hash} ↗
+            {tx.hash} <ExternalLink size={14} aria-hidden="true" />
           </a>
           {tx.error && <p className="notice">{tx.error}</p>}
+          {tx.status === "failed" && (
+            <p className="transaction-recovery">
+              This transfer failed on-chain. Check the explorer and your balance
+              before preparing a new one; network fees may still have been
+              spent.
+            </p>
+          )}
           {["unknown", "prepared"].includes(tx.status) &&
             tx.signedTransaction &&
             onRetry && (

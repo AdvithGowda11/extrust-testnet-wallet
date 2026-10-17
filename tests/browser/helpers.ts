@@ -10,7 +10,5 @@ export async function createWallet(page: Page) {
   await page.getByLabel("Repeat passphrase").fill(password);
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Save encrypted wallet" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Wallet", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".wallet-home")).toBeVisible();
 }

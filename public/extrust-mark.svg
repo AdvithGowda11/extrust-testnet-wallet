@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">EXTrust mark</title>
+  <circle cx="32" cy="32" r="31" fill="#fff" stroke="#e9e6e1" stroke-width="2"/>
+  <path d="M32 13 48 19v14c0 11-6.4 18.3-16 22-9.6-3.7-16-11-16-22V19l16-6Z" fill="#24201f"/>
+  <path d="M38.5 24H26v16h12.5M26 32h10" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

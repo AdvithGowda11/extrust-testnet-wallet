@@ -11,7 +11,7 @@ import { BlockchainService } from "@/services/blockchainService";
 import { StorageService } from "@/services/storageService";
 import { NETWORKS, explorerUrl } from "@/config/networks";
 import { errorMessage } from "@/lib/amounts";
-import { Screen, ErrorNotice, Notice } from "./Screen";
+import { Screen, Notice } from "./Screen";
 export default function SendTransaction({
   wallet,
   network,
@@ -29,6 +29,7 @@ export default function SendTransaction({
   const [tokens, setTokens] = useState<Token[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [errorStage, setErrorStage] = useState<"prepare" | "send" | null>(null);
   const [quote, setQuote] = useState<TransferQuote | null>(null);
   const [sent, setSent] = useState<Transaction | null>(null);
   const account = wallet.accounts[network];
@@ -45,6 +46,7 @@ export default function SendTransaction({
     if (!account) return;
     setBusy(true);
     setError("");
+    setErrorStage(null);
     try {
       const q = await BlockchainService.prepare(
         {
@@ -60,6 +62,7 @@ export default function SendTransaction({
       setQuote(q);
     } catch (e) {
       setError(errorMessage(e));
+      setErrorStage("prepare");
     } finally {
       setBusy(false);
     }
@@ -68,11 +71,13 @@ export default function SendTransaction({
     if (!quote || !account) return;
     setBusy(true);
     setError("");
+    setErrorStage(null);
     try {
       setSent(await BlockchainService.send(quote, account.privateKey));
       setQuote(null);
     } catch (e) {
       setError(errorMessage(e));
+      setErrorStage("send");
       setQuote(null);
     } finally {
       setBusy(false);
@@ -80,12 +85,25 @@ export default function SendTransaction({
   }
   if (sent)
     return (
-      <Screen title="Transaction submitted" onBack={onSuccess}>
-        <Notice>
-          {sent.status === "pending"
-            ? "Broadcast accepted. Waiting for chain confirmation."
-            : "Broadcast outcome is uncertain. The signed transaction is saved for status checking."}
-        </Notice>
+      <Screen
+        title={
+          sent.status === "pending"
+            ? "Transaction submitted"
+            : "Check transaction status"
+        }
+        onBack={onSuccess}
+      >
+        {sent.status === "pending" ? (
+          <Notice>Broadcast accepted. Waiting for chain confirmation.</Notice>
+        ) : (
+          <div className="notice error recovery-panel" role="status">
+            <strong>Broadcast outcome is uncertain</strong>
+            <p>
+              The signed transaction is saved in Activity. Check its status
+              before sending again; a second new transfer could duplicate it.
+            </p>
+          </div>
+        )}
         <p className="break">{sent.hash}</p>
         <a
           target="_blank"
@@ -104,7 +122,31 @@ export default function SendTransaction({
       title={`Send on ${NETWORKS[network].name}`}
       onBack={busy ? undefined : onBack}
     >
-      <ErrorNotice message={error} />
+      {error && (
+        <div className="notice error recovery-panel" role="alert">
+          <strong>
+            {errorStage === "send"
+              ? "Transfer status needs checking"
+              : "Could not review transfer"}
+          </strong>
+          <p>{error}</p>
+          <p>
+            {errorStage === "send"
+              ? "A broadcast may have reached the network. Check Activity and the explorer before preparing another transfer."
+              : "Your recipient and amount are still here. Check the address, balance, and network, then try again."}
+          </p>
+          {errorStage === "send" ? (
+            <button onClick={onBack}>Check wallet activity</button>
+          ) : (
+            <button
+              disabled={busy || !recipient || !amount}
+              onClick={() => void prepare()}
+            >
+              Try review again
+            </button>
+          )}
+        </div>
+      )}
       {quote ? (
         <>
           <h2>Review transfer</h2>
@@ -166,12 +208,17 @@ export default function SendTransaction({
               placeholder="0.00"
             />
           </label>
-          <button disabled={busy || !recipient} onClick={() => prepare(true)}>
+          <button
+            disabled={busy || !recipient || errorStage === "send"}
+            onClick={() => prepare(true)}
+          >
             Use maximum after fee reserve
           </button>
           <button
             className="primary"
-            disabled={busy || !recipient || !amount || !account}
+            disabled={
+              busy || !recipient || !amount || !account || errorStage === "send"
+            }
             onClick={() => prepare()}
           >
             {busy ? "Checking funds and fees…" : "Review transfer"}

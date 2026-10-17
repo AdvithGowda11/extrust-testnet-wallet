@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import "@fontsource/literata/latin-400.css";
+import "@fontsource/literata/latin-400-italic.css";
+import "@fontsource/literata/latin-700.css";
+import "@fontsource/barlow-condensed/latin-900-italic.css";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";

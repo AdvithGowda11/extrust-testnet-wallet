@@ -368,7 +368,7 @@ async function address(page: Page, n: BlockchainNetwork) {
   await expect(page.locator(".balance")).not.toContainText("—", {
     timeout: 15000,
   });
-  return (await page.locator(".balance-card > .break").textContent())!;
+  return (await page.locator(".wallet-home").getAttribute("data-address"))!;
 }
 async function transfer(
   sender: Page,

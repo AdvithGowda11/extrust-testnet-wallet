@@ -1,5 +1,6 @@
 "use client";
 import { ReactNode } from "react";
+import { ArrowLeft } from "lucide-react";
 export function Screen({
   title,
   onBack,
@@ -12,12 +13,16 @@ export function Screen({
   return (
     <main className="screen">
       <header className="screen-header">
+        <div className="screen-brand">
+          <span className="brand-symbol" aria-hidden="true" />{" "}
+          <strong>EXTrust</strong>
+          <span>TESTNET WALLET</span>
+        </div>
         {onBack && (
           <button className="back" onClick={onBack}>
-            ← Back
+            <ArrowLeft size={18} aria-hidden="true" /> Back
           </button>
         )}
-        <p className="eyebrow">EXTrust · Test networks</p>
         <h1>{title}</h1>
         <p className="muted">Test assets have no monetary value.</p>
       </header>

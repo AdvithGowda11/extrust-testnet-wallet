@@ -85,7 +85,12 @@ test("SIMULATED: added ERC-20 incoming activity persists across lock and reload"
     });
   });
   await createWallet(page);
-  owner = (await page.locator(".balance-card > .break").textContent())!;
+  await page.getByLabel("Network", { exact: true }).selectOption("ethereum");
+  owner = (await page.locator(".wallet-home").getAttribute("data-address"))!;
+  await page
+    .locator(".wallet-primary-actions")
+    .getByRole("button", { name: "Open menu" })
+    .click();
   await page.getByRole("button", { name: "Add token", exact: true }).click();
   await page.getByLabel("Contract address").fill(contract);
   await page.getByRole("button", { name: "Look up token" }).click();
@@ -101,6 +106,7 @@ test("SIMULATED: added ERC-20 incoming activity persists across lock and reload"
   await page.reload();
   await page.getByLabel("Local vault passphrase").fill(password);
   await page.getByRole("button", { name: "Unlock", exact: true }).click();
+  await page.getByLabel("Network", { exact: true }).selectOption("ethereum");
   await expect(page.locator(".transaction")).toContainText(
     "0.000000000000000001 TEST",
     { timeout: 15000 },

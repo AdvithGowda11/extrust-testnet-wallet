@@ -50,6 +50,10 @@ Optional Supabase backups require the URL, a publishable or legacy anonymous key
 
 See `docs/LIMITATIONS.md` for implementation boundaries and remaining acceptance work. Original tutorial provenance: [The Blockchain Coders](https://www.theblockchaincoders.com/).
 
+## Typography
+
+The interface uses Athelas for reading text and Vanguard CF Heavy Oblique for display headings when those fonts are installed and licensed on the device. The app bundles the open-license Literata and Barlow Condensed fallbacks so the same pairing works on other computers without paid font files or a third-party font service. No Athelas or Vanguard binaries are redistributed in this repository. Publishing the exact commercial fonts as webfonts requires the appropriate licenses from [TypeTogether](https://www.typetogether.com/licences) and [Connary Fagen](https://connary.com/fonts/vanguard/).
+
 ## GitHub
 
 Repository: https://github.com/AdvithGowda11/extrust-testnet-wallet (private). The included GitHub Actions workflow runs install, static checks, unit tests, production build and simulated browser tests on pushes and pull requests without wallet secrets or faucet access.
