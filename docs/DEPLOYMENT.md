@@ -1,5 +1,12 @@
 # Online demonstration
 
+**Live website:** https://extrust-testnet-wallet.vercel.app
+
+The production site, public Supabase client configuration, confirmation redirects,
+and 600-requests-per-minute-per-IP API firewall rule are configured. The setup
+section below documents those settings for future maintenance; users can start
+with **Move the existing wallets to the hosted site**.
+
 Use one stable HTTPS production URL on both computers. Windows needs a current
 Chrome or Edge browser and internet access; it does not need Git, Node, or a copy
 of the source. The application signs locally in each browser and sends transactions
@@ -10,9 +17,12 @@ or a source of coins.
 
 1. Import `AdvithGowda11/extrust-testnet-wallet` into Vercel using the free Hobby
    workspace. Keep the repository private and select `main` as production branch.
-2. Select Next.js, Node 22, repository root, `npm ci`, and `npm run build`.
+2. Select Next.js, Node 24, repository root, `npm ci`, and `npm run build`.
    `vercel.json` preserves the webpack build needed by the signing dependencies.
    Do not use static export: the wallet requires its API routes.
+   GitHub CI also checks Node 22. The Bitcoin WASM dependency must remain external
+   on the server and included in the function trace; `npm run test:build` verifies
+   that it loads after relocation from the build directory.
 3. Add the existing `NEXT_PUBLIC_SUPABASE_URL` and
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` as production environment variables before
    building. These are public client configuration; never put a service-role key,
@@ -105,8 +115,9 @@ not prove faucet funding or real settlement. `docs/demo-addresses.json` and
 addresses without checking the current wallet. The funding screen exports only the
 current public receiving addresses for convenient exchange between computers.
 
-Deployment, account access, faucet acceptance and all twelve public transfers must
-be verified separately. Free hosting and public RPC availability cannot be guaranteed.
+Deployment and read-only hosted network checks passed on 2026-10-18. Account access,
+faucet acceptance and all twelve public transfers still need their own evidence.
+Free hosting and public RPC availability cannot be guaranteed.
 
 References: [Vercel Next.js](https://vercel.com/docs/frameworks/full-stack/nextjs),
 [Vercel rate limits](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting),

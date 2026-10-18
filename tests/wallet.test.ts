@@ -8,7 +8,7 @@ import { parseAmount, formatAmount } from "../lib/amounts";
 import { NETWORKS, sameAddress } from "../config/networks";
 import { validateRpc } from "../lib/rpcPolicy";
 import { Wallet } from "ethers";
-import { BlockchainService } from "../services/blockchainService";
+import { BlockchainService, requestJson } from "../services/blockchainService";
 import { Transaction } from "../types";
 const phrase =
   "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
@@ -29,6 +29,15 @@ class MemoryStorage {
 }
 const local = new MemoryStorage();
 Object.defineProperty(globalThis, "localStorage", { value: local });
+test("hosting rate limits give recovery guidance even with an HTML response", async (t) => {
+  t.mock.method(globalThis, "fetch", async () =>
+    new Response("<html>Too Many Requests</html>", { status: 429 }),
+  );
+  await assert.rejects(
+    () => requestJson("/api/balance/ethereum/test"),
+    /Wait one minute, then check balances or transaction status/,
+  );
+});
 test("amounts round trip without floating point, including one wei", () => {
   for (const [s, d] of [
     ["0.000000000000000001", 18],

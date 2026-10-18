@@ -2,7 +2,9 @@
 
 ## Online-demo preparation — 2026-10-18
 
-- TypeScript, lint (zero warnings), and all 26 unit tests passed.
+- TypeScript, lint (zero warnings), and all 27 unit tests passed. The added check
+  verifies readable retry guidance for an HTTP 429 HTML response from the hosting
+  firewall rather than a JSON parsing error.
 - The webpack production build passed. All 17 Chromium browser tests passed,
   including the new email-setup → save → lock → unlock regression and six-network
   funding screen with partial provider failure, retry, pending BTC, clipboard,
@@ -10,10 +12,31 @@
 - The transfer suite still uses simulated network responses: both directions on
   each of the six networks passed, but these are not public blockchain settlements.
 - Read-only checks verified all six current test-network identities.
-- Hosting preparation and the two-computer runbook are in `docs/DEPLOYMENT.md`.
-  The Vercel connector authenticated but its project-workspace request returned
-  HTTP 403; browser-based setup is in progress. No public deployment or completed
-  twelve-transfer result is claimed by these checks.
+- The private GitHub repository is connected to the free Vercel project. Production
+  is live at https://extrust-testnet-wallet.vercel.app on Node 24. The initial
+  deployment's HTTP 500 was traced to a build-directory path in Bitcoin's WASM
+  loader; externalizing that server dependency and including its runtime file
+  fixed it. `npm run test:build` checks the traced package after relocation.
+- An isolated npm 10 clean install passed after restoring the missing optional
+  `utf-8-validate` peer entry. GitHub's subsequent run passed installation, checks,
+  build and relocation, but exposed missing Supabase configuration in its cloud
+  form test. CI now supplies non-routable, non-secret client fixtures for that UI.
+- Supabase's production Site URL and six explicit production/local redirect URLs
+  were saved and verified after reload. Vercel's active edge rule matches `/api/`,
+  counts by IP in a fixed 60-second window, and returns 429 above 600 requests.
+  This records the saved configuration, not a sustained-load test.
+- Anonymous production HTTP access returned 200. Through the deployed API, all
+  five RPC identities matched, Bitcoin Signet returned its current height,
+  unauthenticated cloud backup returned 401, an invalid network returned 400,
+  and a foreign-origin RPC request returned 403.
+- Three existing browser regressions also passed against the hosted application
+  in isolated contexts: email-setup → lock/unlock, funding-screen behavior, and
+  six-network onboarding/receive. Their balance/history responses are simulated;
+  the separate API checks above use real public providers. The user's browser
+  wallet storage was not replaced by these tests.
+- The two-computer runbook is in `docs/DEPLOYMENT.md`. Current-wallet faucet funding,
+  hosted email sign-in/cloud-backup rehearsal and twelve public transfers remain
+  unverified. No completed twelve-transfer result is claimed.
 
 The dated results below are historical and refer to their stated commits/wallets.
 

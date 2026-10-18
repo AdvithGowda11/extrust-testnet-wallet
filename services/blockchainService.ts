@@ -49,6 +49,11 @@ export async function requestJson(
     cache: "no-store",
     signal: AbortSignal.timeout(25000),
   });
+  // The hosting firewall can return HTML instead of the API's JSON error body.
+  if (response.status === 429)
+    throw new Error(
+      "Request limit reached. Wait one minute, then check balances or transaction status before retrying.",
+    );
   const json = await response.json();
   if (!response.ok) throw new Error(json.error || "Network request failed");
   return json;
