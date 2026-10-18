@@ -56,6 +56,10 @@ export default function WalletDashboard() {
   const [screen, setScreen] = useState<
     "assets" | "send" | "token" | "export" | "backup" | "receive" | "fund"
   >("assets");
+  useEffect(() => {
+    const frame = document.querySelector(".mobile-container");
+    if (frame) frame.scrollTop = 0;
+  }, [screen]);
   const [balance, setBalance] = useState<string | null>(null);
   const [pending, setPending] = useState("0");
   const [tokens, setTokens] = useState<Token[]>([]);

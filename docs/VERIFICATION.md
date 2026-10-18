@@ -1,5 +1,17 @@
 # Verification record — 2026-10-17
 
+## Contained phone layout — 2026-10-18
+
+- The desktop wallet uses a fixed viewport with the iPhone 18 Pro Max display
+  aspect ratio (1320:2868); a small phone viewport uses the available screen.
+  Long views scroll inside the app and the visual scrollbar is hidden.
+- Browser checks at 1440×900, 430×932 and 375×667 verified frame dimensions,
+  wheel scrolling, hidden scrollbar, six funding cards, no document scrolling or
+  horizontal overflow, and top-of-screen position after navigation.
+- The production build, TypeScript, ESLint, all 27 unit tests and all 20 Chromium
+  browser tests passed locally. Transfer tests still use simulated network
+  responses; no public transfer is claimed by this layout change.
+
 ## Online-demo preparation — 2026-10-18
 
 - TypeScript, lint (zero warnings), and all 27 unit tests passed. The added check

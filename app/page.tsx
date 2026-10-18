@@ -23,6 +23,11 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const cloudBackupRequested = useRef(false);
   const walletSetupRequested = useRef(false);
+  useEffect(() => {
+    if (page === "restore" && cloudBackupRequested.current) return;
+    const frame = document.querySelector(".mobile-container");
+    if (frame) frame.scrollTop = 0;
+  }, [page]);
   function walletReady() {
     cloudBackupRequested.current = false;
     walletSetupRequested.current = false;

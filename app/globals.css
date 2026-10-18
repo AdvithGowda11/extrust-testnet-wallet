@@ -44,7 +44,11 @@ html {
 }
 body {
   min-width: 320px;
+  height: 100dvh;
   margin: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   background: linear-gradient(145deg, #ddc4a8, #f0b772 45%, #e9ac9e);
   color: var(--ink);
   font: 16px/1.5 var(--font-copy);
@@ -296,17 +300,25 @@ input[type="checkbox"] {
   accent-color: #24201f;
 }
 .mobile-container {
-  width: min(100%, 440px);
-  min-height: calc(100vh - 48px);
-  margin: 24px auto;
-  overflow: hidden;
+  width: auto;
+  max-width: 440px;
+  height: min(956px, calc(100dvh - 32px));
+  aspect-ratio: 1320 / 2868;
+  margin: 0 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   border: 6px solid #f3f0ea;
   border-radius: 38px;
   background: white;
   box-shadow: 0 24px 65px #553b2960;
 }
+.mobile-container::-webkit-scrollbar {
+  display: none;
+}
 .screen {
-  min-height: calc(100vh - 60px);
+  min-height: 100%;
   background: var(--paper);
 }
 .screen-header {
@@ -500,7 +512,7 @@ dd {
 .wallet-home {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 60px);
+  min-height: 100%;
   background: linear-gradient(#fff 0%, #fff 43%, #fff7ec 68%, #f4d7bc 100%);
 }
 .wallet-topbar {
@@ -1186,7 +1198,9 @@ dd {
   }
   .mobile-container {
     width: 100%;
-    min-height: 100vh;
+    max-width: none;
+    height: 100dvh;
+    aspect-ratio: auto;
     margin: 0;
     border: 0;
     border-radius: 0;
@@ -1194,7 +1208,7 @@ dd {
   }
   .screen,
   .wallet-home {
-    min-height: 100vh;
+    min-height: 100%;
   }
 }
 @media (max-width: 375px) {
