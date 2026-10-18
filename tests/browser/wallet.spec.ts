@@ -439,31 +439,67 @@ test("restore over a locked vault requires confirmation and preserves account ad
   );
 });
 
-test("cloud confirmation deep link opens backup instead of the locked vault", async ({
+test("email confirmation opens safe wallet setup instead of the locked vault", async ({
   page,
   context,
 }) => {
   await mockReads(context);
   await createWallet(page);
   await page.getByRole("button", { name: "Lock", exact: true }).click();
-  await page.goto("/?screen=cloud-backup");
+  await page.goto("/?screen=wallet-setup");
   await expect(
-    page.getByRole("heading", { name: "Backup and restore" }),
+    page.getByRole("heading", { name: "Create or import" }),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      "Email confirmed. Enter the same email and wallet cloud password",
-    ),
+    page.getByText("A locked wallet already exists on this browser."),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Create wallet cloud account" }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Resend confirmation email" }),
-  ).toHaveCount(0);
+    page.getByRole("button", { name: "Generate recovery phrase" }),
+  ).toBeVisible();
   await expect(page).toHaveURL("/");
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Unlock wallet" }),
   ).toBeVisible();
+});
+
+test("locked wallet offers a safe create or phrase-recovery path", async ({
+  page,
+  context,
+}) => {
+  await mockReads(context);
+  await createWallet(page);
+  await page.getByRole("button", { name: "Lock", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Create or recover a different wallet" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Generate recovery phrase" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("A locked wallet already exists on this browser."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Download current encrypted vault" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Generate recovery phrase" }).click();
+  await page
+    .getByLabel("Local vault passphrase", { exact: true })
+    .fill(password);
+  await page.getByLabel("Repeat passphrase").fill(password);
+  await page
+    .getByLabel(
+      "I saved my recovery information and am using test assets only.",
+    )
+    .check();
+  await expect(
+    page.getByRole("button", { name: "Save encrypted wallet" }),
+  ).toBeDisabled();
+  await page
+    .getByLabel(
+      "I saved the current encrypted vault and understand that continuing replaces this browser’s active wallet.",
+    )
+    .check();
+  await page.getByRole("button", { name: "Save encrypted wallet" }).click();
+  await expect(page.locator(".wallet-home")).toBeVisible();
 });

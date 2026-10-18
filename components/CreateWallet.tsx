@@ -5,7 +5,7 @@ import { StorageService } from "@/services/storageService";
 import { BlockchainNetwork } from "@/types";
 import { CHAINS, NETWORKS } from "@/config/networks";
 import { errorMessage } from "@/lib/amounts";
-import { Screen, ErrorNotice } from "./Screen";
+import { Screen, ErrorNotice, download } from "./Screen";
 export default function CreateWallet({
   onWalletCreated,
   onBack,
@@ -20,8 +20,10 @@ export default function CreateWallet({
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [confirm, setConfirm] = useState(false);
+  const [confirmReplacement, setConfirmReplacement] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const replacingWallet = StorageService.hasWallet();
   async function save() {
     setError("");
     setBusy(true);
@@ -29,6 +31,8 @@ export default function CreateWallet({
       if (password !== repeat) throw new Error("Passphrases do not match");
       if (!confirm)
         throw new Error("Confirm that you saved your recovery information");
+      if (replacingWallet && !confirmReplacement)
+        throw new Error("Confirm replacement of the current local wallet");
       const wallet =
         mode === "key"
           ? WalletService.fromPrivateKey(secret, network)
@@ -46,6 +50,26 @@ export default function CreateWallet({
   }
   return (
     <Screen title="Create or import" onBack={onBack}>
+      {replacingWallet && (
+        <div className="notice error recovery-panel" role="alert">
+          <strong>A locked wallet already exists on this browser.</strong>
+          <p>
+            Creating or importing here replaces its encrypted local vault. Save
+            a copy first in case you later remember its passphrase.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              download(
+                "extrust-testnet-wallet-before-replacement.json",
+                StorageService.encryptedVault(),
+              )
+            }
+          >
+            Download current encrypted vault
+          </button>
+        </div>
+      )}
       <label>
         Wallet source
         <select
@@ -149,6 +173,17 @@ export default function CreateWallet({
         />
         I saved my recovery information and am using test assets only.
       </label>
+      {replacingWallet && (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={confirmReplacement}
+            onChange={(e) => setConfirmReplacement(e.target.checked)}
+          />
+          I saved the current encrypted vault and understand that continuing
+          replaces this browser’s active wallet.
+        </label>
+      )}
       <ErrorNotice message={error} />
       <button
         className="primary"
@@ -156,6 +191,7 @@ export default function CreateWallet({
           busy ||
           password.length < 12 ||
           !confirm ||
+          (replacingWallet && !confirmReplacement) ||
           !(mode === "key" ? secret : phrase)
         }
         onClick={save}

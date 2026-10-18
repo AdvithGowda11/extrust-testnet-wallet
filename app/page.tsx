@@ -7,6 +7,7 @@ import CloudBackup from "@/components/CloudBackup";
 import { Screen, ErrorNotice, download } from "@/components/Screen";
 import { StorageService } from "@/services/storageService";
 import { errorMessage } from "@/lib/amounts";
+import { getSupabase } from "@/lib/supabase/client";
 type Page =
   | "loading"
   | "welcome"
@@ -21,6 +22,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const cloudBackupRequested = useRef(false);
+  const walletSetupRequested = useRef(false);
   const initial = () => {
     try {
       const url = new URL(window.location.href);
@@ -32,6 +34,19 @@ export default function Home() {
           "",
           `${url.pathname}${url.search}${url.hash}`,
         );
+      } else if (url.searchParams.get("screen") === "wallet-setup") {
+        walletSetupRequested.current = true;
+        url.searchParams.delete("screen");
+        window.history.replaceState(
+          null,
+          "",
+          `${url.pathname}${url.search}${url.hash}`,
+        );
+        void getSupabase()?.auth.getSession();
+      }
+      if (walletSetupRequested.current) {
+        setPage("create");
+        return;
       }
       if (cloudBackupRequested.current) {
         setPage("restore");
@@ -112,7 +127,10 @@ export default function Home() {
   if (page === "create")
     return (
       <CreateWallet
-        onBack={() => setPage("welcome")}
+        onBack={() => {
+          walletSetupRequested.current = false;
+          initial();
+        }}
         onWalletCreated={() => setPage("dashboard")}
       />
     );
@@ -213,9 +231,13 @@ export default function Home() {
           >
             Download locked encrypted vault
           </button>
+          <button onClick={() => setPage("create")}>
+            Create or recover a different wallet
+          </button>
           <p className="muted">
             Cloud sign-in manages encrypted backups. It does not create a new
-            wallet or a new 12-word recovery phrase.
+            wallet. To generate new recovery words or enter existing ones, use
+            “Create or recover a different wallet.”
           </p>
         </>
       )}

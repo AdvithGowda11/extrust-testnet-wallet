@@ -111,7 +111,7 @@ export default function CloudBackup({
   }
   function confirmationRedirect() {
     const url = new URL(window.location.origin);
-    url.searchParams.set("screen", "cloud-backup");
+    url.searchParams.set("screen", "wallet-setup");
     return url.toString();
   }
   return (
