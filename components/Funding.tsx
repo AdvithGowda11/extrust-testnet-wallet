@@ -261,6 +261,12 @@ export default function Funding({
                 Copy faucet link
               </button>
             </div>
+            {config.faucet.includes("faucet.quicknode.com") && (
+              <p className="muted small">
+                On QuickNode, skip “Connect Wallet.” Paste the address above
+                into the separate “Wallet Address” field, then continue.
+              </p>
+            )}
             <details className="funding-options">
               <summary>Faucet not working? Other options</summary>
               <p className="muted small">

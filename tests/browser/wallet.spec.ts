@@ -94,6 +94,7 @@ test("six-network funding reports confirmed, pending and failed reads without ex
     "href",
     "https://faucet.quicknode.com/binance-smart-chain/bnb-testnet",
   );
+  await expect(binance).toContainText("skip “Connect Wallet.”");
   await expect(
     page
       .getByRole("region", { name: "Ethereum Sepolia" })
