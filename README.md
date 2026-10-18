@@ -2,6 +2,8 @@
 
 A Next.js/React educational wallet for live, signed native-coin transfers on six public test networks. Test coins have no monetary value. No AI service is integrated. This is not a production custody product.
 
+**Open the wallet:** https://extrust-testnet-wallet.vercel.app — use this same URL on Mac and Windows. No source download or installation is needed. See [the online demonstration guide](docs/DEPLOYMENT.md) for importing existing wallets, free faucet funding and the twelve-transfer checklist.
+
 | Network | Asset | Identity |
 | --- | --- | --- |
 | Ethereum Sepolia | test ETH | 11155111 |
@@ -44,6 +46,7 @@ Optional Supabase backups require the URL, a publishable or legacy anonymous key
 
 - `npm run check`: TypeScript, ESLint and unit tests.
 - `npm run build`: production bundle.
+- `npm run test:build`: verify the traced Bitcoin WASM package works after deployment relocation.
 - `npx playwright install chromium`, then `npm run test:browser`: browser tests. Transfer tests use real signing with **simulated network responses** and independent browser contexts. They are not proof of public-network settlement or two physical computers.
 - `npm run test:networks`: read-only identity checks of all six public networks.
 - `npm audit`: known dependency advisories at the time of the check.

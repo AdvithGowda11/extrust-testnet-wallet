@@ -29,6 +29,9 @@
   five RPC identities matched, Bitcoin Signet returned its current height,
   unauthenticated cloud backup returned 401, an invalid network returned 400,
   and a foreign-origin RPC request returned 403.
+- All six production balance endpoints returned valid live balance/pending values
+  for the historical public test addresses. This verifies reads, not funding of
+  the user's current wallets.
 - Three existing browser regressions also passed against the hosted application
   in isolated contexts: email-setup → lock/unlock, funding-screen behavior, and
   six-network onboarding/receive. Their balance/history responses are simulated;

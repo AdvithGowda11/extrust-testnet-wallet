@@ -54,7 +54,7 @@ No finite test suite establishes that nothing can fail. The following boundaries
 24. Browser quota, private mode, site-data deletion and OS failure can prevent persistence. Preserve offline encrypted backups.
 25. A legacy mnemonic cannot reconstruct unrelated imported keys or an undocumented old derivation. Legacy archives preserve bytes; direct legacy cloud restore remains unsupported.
 26. The configured Supabase project is active and the supplied v2 migration is deployed. Rollback-only two-user SQL tests passed for own-row create/read/update/delete, cross-user isolation, format validation and anonymous denial. Email delivery and confirmation still depend on the project's Auth configuration and the user's reachable email account.
-27. The API rate limiter is per process. Public multi-instance deployments need an edge/shared limiter and operational monitoring.
+27. The application limiter is per process. The Vercel deployment additionally enforces a shared edge limit of 600 API requests per minute per IP. Computers sharing one public IP share that limit. Other deployments need equivalent protection; operational monitoring and sustained-load testing remain separate work.
 28. HTTPS or localhost, modern Web Crypto, Web Locks and supported browsers are required. Mobile/Safari/Firefox coverage is not established by Chromium tests.
 29. Dependency audit results cover known advisories at check time, not future disclosures or a complete code audit.
 30. Continuous public RPC monitoring, disaster recovery drills and production custody operations are not provided by this educational application.
