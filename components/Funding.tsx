@@ -13,8 +13,8 @@ const otherFaucets: Record<BlockchainNetwork, { name: string; url: string }[]> =
   {
     ethereum: [
       {
-        name: "QuickNode Sepolia",
-        url: "https://faucet.quicknode.com/ethereum/sepolia",
+        name: "Sepolia browser-work faucet",
+        url: "https://sepolia-faucet.pk910.de/",
       },
       {
         name: "Ethereum faucet list",
@@ -33,8 +33,8 @@ const otherFaucets: Record<BlockchainNetwork, { name: string; url: string }[]> =
     ],
     base: [
       {
-        name: "QuickNode Base Sepolia",
-        url: "https://faucet.quicknode.com/base/sepolia",
+        name: "More Base Sepolia faucets",
+        url: "https://basehub.org/network/network-faucets/",
       },
     ],
     solana: [

@@ -98,12 +98,12 @@ test("six-network funding reports confirmed, pending and failed reads without ex
     page
       .getByRole("region", { name: "Ethereum Sepolia" })
       .getByRole("link", { name: "Open faucet" }),
-  ).toHaveAttribute("href", "https://ethfaucet.com/networks/ethereum");
+  ).toHaveAttribute("href", "https://faucet.quicknode.com/ethereum/sepolia");
   await expect(
     page
       .getByRole("region", { name: "Base Sepolia" })
       .getByRole("link", { name: "Open faucet" }),
-  ).toHaveAttribute("href", "https://ethfaucet.com/networks/base");
+  ).toHaveAttribute("href", "https://faucet.quicknode.com/base/sepolia");
   await expect(
     bitcoin.getByRole("link", { name: "Open faucet" }),
   ).toHaveAttribute("href", "https://bitcoinsignetfaucet.com/");
