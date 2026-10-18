@@ -112,7 +112,13 @@ export default function Home() {
         setPage("dashboard");
       }
     } catch (e) {
-      setError(errorMessage(e));
+      const message = errorMessage(e);
+      setError(
+        page === "unlock" &&
+          message === "Incorrect passphrase or damaged backup"
+          ? "Incorrect passphrase for this encrypted wallet. Enter the local vault passphrase you created with this wallet, not its 12 recovery words or your cloud-account password. If you no longer know it, recover the wallet from its 12 words below."
+          : message,
+      );
     } finally {
       setBusy(false);
     }
@@ -207,6 +213,13 @@ export default function Home() {
             required
           />
         </label>
+        {page === "unlock" && (
+          <p className="muted">
+            This is the local password created when this encrypted wallet was
+            saved. The 12 recovery words are used through “Create or recover a
+            different wallet.”
+          </p>
+        )}
         <ErrorNotice message={error} />
         <button className="primary" disabled={busy || !password}>
           {busy
