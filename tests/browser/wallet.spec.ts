@@ -87,6 +87,26 @@ test("six-network funding reports confirmed, pending and failed reads without ex
   await expect(
     solana.getByRole("link", { name: "Open faucet" }),
   ).toHaveAttribute("href", "https://faucet.solana.com/");
+  const binance = page.getByRole("region", { name: "BNB Testnet" });
+  await expect(
+    binance.getByRole("link", { name: "Open faucet" }),
+  ).toHaveAttribute(
+    "href",
+    "https://faucet.quicknode.com/binance-smart-chain/bnb-testnet",
+  );
+  await expect(
+    page
+      .getByRole("region", { name: "Ethereum Sepolia" })
+      .getByRole("link", { name: "Open faucet" }),
+  ).toHaveAttribute("href", "https://ethfaucet.com/networks/ethereum");
+  await expect(
+    page
+      .getByRole("region", { name: "Base Sepolia" })
+      .getByRole("link", { name: "Open faucet" }),
+  ).toHaveAttribute("href", "https://ethfaucet.com/networks/base");
+  await expect(
+    bitcoin.getByRole("link", { name: "Open faucet" }),
+  ).toHaveAttribute("href", "https://bitcoinsignetfaucet.com/");
   await expect(
     solana.getByRole("link", { name: "Check deposits on explorer" }),
   ).toHaveAttribute("href", /\?cluster=devnet$/);
@@ -94,6 +114,14 @@ test("six-network funding reports confirmed, pending and failed reads without ex
   await solana.getByRole("button", { name: "Copy address" }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toBe(await solana.locator("p.break").textContent());
+  await binance.getByRole("button", { name: "Copy faucet link" }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    "https://faucet.quicknode.com/binance-smart-chain/bnb-testnet",
+  );
+  await binance.getByText("Faucet not working? Other options").click();
+  await expect(
+    binance.getByRole("link", { name: "BNB Chain support options" }),
+  ).toBeVisible();
   const pendingDownload = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Download public receiving addresses" })
@@ -337,7 +365,7 @@ test("encrypted onboarding, six networks, lock/reload/unlock and accessible rece
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Open test-coin funding options" }),
-  ).toHaveAttribute("href", "https://signetfaucet.com/");
+  ).toHaveAttribute("href", "https://bitcoinsignetfaucet.com/");
   await page.screenshot({
     path: test.info().outputPath("receive.png"),
     fullPage: true,

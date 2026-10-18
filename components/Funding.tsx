@@ -9,6 +9,51 @@ import NetworkLogo from "./NetworkLogo";
 
 type Balance = { balance: string; pending: string; checkedAt: number };
 type Result = { value?: Balance; error?: string };
+const otherFaucets: Record<BlockchainNetwork, { name: string; url: string }[]> =
+  {
+    ethereum: [
+      {
+        name: "QuickNode Sepolia",
+        url: "https://faucet.quicknode.com/ethereum/sepolia",
+      },
+      {
+        name: "Ethereum faucet list",
+        url: "https://ethereum.org/developers/docs/networks/#sepolia",
+      },
+    ],
+    polygon: [
+      { name: "OpenFaucet Amoy", url: "https://openfaucet.org/polygon-amoy" },
+    ],
+    binance: [
+      { name: "Browser-work BNB faucet", url: "https://pow.zalalena.com/bsc" },
+      {
+        name: "BNB Chain support options",
+        url: "https://docs.bnbchain.org/docs/bsc-faucet/",
+      },
+    ],
+    base: [
+      {
+        name: "QuickNode Base Sepolia",
+        url: "https://faucet.quicknode.com/base/sepolia",
+      },
+    ],
+    solana: [
+      {
+        name: "QuickNode Solana Devnet",
+        url: "https://faucet.quicknode.com/solana/devnet",
+      },
+      {
+        name: "Solana faucet guide",
+        url: "https://solana.com/developers/cookbook/development/airdrops-and-faucets",
+      },
+    ],
+    bitcoin: [
+      {
+        name: "Alternate Signet faucet",
+        url: "https://signet.bublina.eu.org/",
+      },
+    ],
+  };
 
 export default function Funding({
   wallet,
@@ -75,6 +120,20 @@ export default function Funding({
     }
   }
 
+  async function copyFaucet(network: BlockchainNetwork) {
+    setError("");
+    try {
+      await navigator.clipboard.writeText(NETWORKS[network].faucet);
+      setNotice(
+        `${NETWORKS[network].name} faucet link copied. Open it in a browser and paste your public receiving address there.`,
+      );
+    } catch {
+      setError(
+        "Clipboard unavailable. Use the faucet link or another browser.",
+      );
+    }
+  }
+
   return (
     <Screen title="Get free test coins" onBack={onBack}>
       <p>
@@ -86,6 +145,11 @@ export default function Funding({
         Faucets may require sign-in, CAPTCHA, or a cooldown. A faucet request
         alone does not confirm a deposit. Fund both computers’ wallets
         separately before the demonstration.
+      </p>
+      <p className="muted small">
+        If a faucet asks you to hold real coins on mainnet, skip it and use a
+        different option below. Faucet amounts and availability are set by the
+        provider, not by this wallet.
       </p>
       <button
         className="primary"
@@ -193,7 +257,27 @@ export default function Funding({
               >
                 Open faucet ↗
               </a>
+              <button onClick={() => void copyFaucet(network)}>
+                Copy faucet link
+              </button>
             </div>
+            <details className="funding-options">
+              <summary>Faucet not working? Other options</summary>
+              <p className="muted small">
+                Use the same network and this card’s public address. If a link
+                does not open here, copy the faucet link and paste it into your
+                regular browser. Claims can be delayed, empty, or rate limited.
+              </p>
+              <ul>
+                {otherFaucets[network].map((option) => (
+                  <li key={option.url}>
+                    <a href={option.url} target="_blank" rel="noreferrer">
+                      {option.name} ↗
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
             <a
               href={explorerUrl(
                 network,

@@ -72,18 +72,22 @@ wallet does not mean the local wallet was deleted.
 2. For each card, copy the receiving address and open its faucet. Choose the exact
    network and its native coin:
 
-   | Network | Native coin |
-   | --- | --- |
-   | Ethereum Sepolia | ETH |
-   | Polygon Amoy | POL |
-   | BNB Testnet | BNB |
-   | Base Sepolia | ETH |
-   | Solana Devnet | SOL |
-   | Bitcoin Signet | BTC |
+   | Network          | Native coin |
+   | ---------------- | ----------- |
+   | Ethereum Sepolia | ETH         |
+   | Polygon Amoy     | POL         |
+   | BNB Testnet      | BNB         |
+   | Base Sepolia     | ETH         |
+   | Solana Devnet    | SOL         |
+   | Bitcoin Signet   | BTC         |
 
-3. Complete any faucet login or CAPTCHA yourself. These external services may be
-   empty or rate limited; retry after their stated cooldown or use an alternative
-   linked by the network's official faucet page. Do not buy coins for this demo.
+3. Complete any faucet login or CAPTCHA yourself. If a link does not open in
+   the app browser, use **Copy faucet link** and paste it into your regular
+   browser. Each funding card also has **Faucet not working? Other options**.
+   These services may be empty, delayed, or rate limited. Do not buy coins for
+   this demo. In particular, BNB Chain's own faucet may demand 0.002 real BNB
+   on BSC Mainnet; skip that route and use the linked QuickNode BNB Testnet
+   faucet, which advertises a free basic claim without a mainnet balance.
 4. Return and click **Check balances**. A confirmed positive balance displays
    **Funds detected**. **Balance unavailable** is a failed read, not a zero balance.
    Bitcoin's pending net change is separate; wait for incoming outputs to confirm.

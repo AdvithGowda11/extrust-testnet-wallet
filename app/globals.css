@@ -441,6 +441,22 @@ h2 {
   padding: 12px 10px;
   font-size: 0.85rem;
 }
+.funding-options {
+  padding: 11px 13px;
+  background: #fffaf3;
+  font-size: 0.86rem;
+}
+.funding-options summary {
+  color: #6f5140;
+  font-weight: 600;
+}
+.funding-options ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+.funding-options li + li {
+  margin-top: 7px;
+}
 .row,
 .actions {
   display: flex;
