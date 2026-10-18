@@ -120,6 +120,7 @@ export default function Home() {
     return (
       <CloudBackup
         wallet={null}
+        returnedFromConfirmation={cloudBackupRequested.current}
         onBack={() => {
           cloudBackupRequested.current = false;
           initial();

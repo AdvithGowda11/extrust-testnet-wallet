@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MultiChainWallet } from "@/types";
 import { StorageService } from "@/services/storageService";
 import { BackupService } from "@/services/backupService";
@@ -12,10 +12,12 @@ export default function CloudBackup({
   wallet,
   onBack,
   onWalletRestored,
+  returnedFromConfirmation = false,
 }: {
   wallet: MultiChainWallet | null;
   onBack: () => void;
   onWalletRestored: () => void;
+  returnedFromConfirmation?: boolean;
 }) {
   const [file, setFile] = useState("");
   const [password, setPassword] = useState("");
@@ -31,22 +33,39 @@ export default function CloudBackup({
   const [cloudNotice, setCloudNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const cloudCard = useRef<HTMLDivElement>(null);
   const supabase = getSupabase();
   useEffect(() => {
     if (!supabase) return;
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
-      if (active) setUser(data.session?.user.email || null);
+      if (!active) return;
+      setUser(data.session?.user.email || null);
+      if (returnedFromConfirmation) {
+        setCloudNotice(
+          data.session
+            ? "Email confirmed. Your cloud account is signed in."
+            : "Email confirmed. Enter the same email and wallet cloud password, then select Sign in. Do not create another account or resend the email.",
+        );
+      }
     });
     const sub = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user.email || null);
-      if (session) setAwaitingConfirmation(false);
+      if (session) {
+        setAwaitingConfirmation(false);
+        if (returnedFromConfirmation)
+          setCloudNotice("Email confirmed. Your cloud account is signed in.");
+      }
     });
     return () => {
       active = false;
       sub.data.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [returnedFromConfirmation, supabase]);
+  useEffect(() => {
+    if (!returnedFromConfirmation) return;
+    cloudCard.current?.scrollIntoView({ block: "start" });
+  }, [returnedFromConfirmation]);
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -172,7 +191,7 @@ export default function CloudBackup({
           Their original keys are not re-derived.
         </p>
       </div>
-      <div className="card">
+      <div className="card" ref={cloudCard}>
         <h2>Optional encrypted cloud backup</h2>
         <ErrorNotice message={cloudError} />
         {cloudNotice && <Notice>{cloudNotice}</Notice>}
@@ -218,36 +237,38 @@ export default function CloudBackup({
               >
                 Sign in
               </button>
-              <button
-                disabled={busy}
-                onClick={() =>
-                  runCloud(async () => {
-                    const normalizedEmail = email.trim();
-                    if (!normalizedEmail) throw new Error("Enter your email");
-                    if (authPassword.length < 12)
-                      throw new Error(
-                        "Use at least 12 characters for the cloud account password",
+              {!returnedFromConfirmation && (
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    runCloud(async () => {
+                      const normalizedEmail = email.trim();
+                      if (!normalizedEmail) throw new Error("Enter your email");
+                      if (authPassword.length < 12)
+                        throw new Error(
+                          "Use at least 12 characters for the cloud account password",
+                        );
+                      const { data, error } = await supabase.auth.signUp({
+                        email: normalizedEmail,
+                        password: authPassword,
+                        options: { emailRedirectTo: confirmationRedirect() },
+                      });
+                      if (error) throw error;
+                      setAwaitingConfirmation(!data.session);
+                      setCloudNotice(
+                        data.session
+                          ? "Cloud account created and signed in."
+                          : "Confirmation email sent. Open it in this browser, confirm the address, then return here.",
                       );
-                    const { data, error } = await supabase.auth.signUp({
-                      email: normalizedEmail,
-                      password: authPassword,
-                      options: { emailRedirectTo: confirmationRedirect() },
-                    });
-                    if (error) throw error;
-                    setAwaitingConfirmation(!data.session);
-                    setCloudNotice(
-                      data.session
-                        ? "Cloud account created and signed in."
-                        : "Confirmation email sent. Open it in this browser, confirm the address, then return here.",
-                    );
-                    setAuthPassword("");
-                  })
-                }
-              >
-                Create wallet cloud account
-              </button>
+                      setAuthPassword("");
+                    })
+                  }
+                >
+                  Create wallet cloud account
+                </button>
+              )}
             </div>
-            {awaitingConfirmation && (
+            {awaitingConfirmation && !returnedFromConfirmation && (
               <button
                 disabled={busy || !email.trim()}
                 onClick={() =>

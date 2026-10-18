@@ -452,9 +452,15 @@ test("cloud confirmation deep link opens backup instead of the locked vault", as
   ).toBeVisible();
   await expect(
     page.getByText(
-      "A cloud account stores an encrypted copy of a wallet you already created.",
+      "Email confirmed. Enter the same email and wallet cloud password",
     ),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Create wallet cloud account" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Resend confirmation email" }),
+  ).toHaveCount(0);
   await expect(page).toHaveURL("/");
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(
