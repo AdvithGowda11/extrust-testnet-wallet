@@ -94,12 +94,17 @@ test("six-network funding reports confirmed, pending and failed reads without ex
     "href",
     "https://faucet.quicknode.com/binance-smart-chain/bnb-testnet",
   );
-  await expect(binance).toContainText("skip “Connect Wallet.”");
+  await expect(binance).toContainText(
+    "may reject wallets without a mainnet balance",
+  );
   await expect(
     page
       .getByRole("region", { name: "Ethereum Sepolia" })
       .getByRole("link", { name: "Open faucet" }),
-  ).toHaveAttribute("href", "https://faucet.quicknode.com/ethereum/sepolia");
+  ).toHaveAttribute("href", "https://sepolia-faucet.pk910.de/");
+  await expect(
+    page.getByRole("region", { name: "Ethereum Sepolia" }),
+  ).toContainText("No wallet app or mainnet ETH is needed.");
   await expect(
     page
       .getByRole("region", { name: "Base Sepolia" })

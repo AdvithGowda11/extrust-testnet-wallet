@@ -13,8 +13,8 @@ const otherFaucets: Record<BlockchainNetwork, { name: string; url: string }[]> =
   {
     ethereum: [
       {
-        name: "Sepolia browser-work faucet",
-        url: "https://sepolia-faucet.pk910.de/",
+        name: "Alternate Sepolia browser-work faucet",
+        url: "https://pow.zalalena.com/sepolia",
       },
       {
         name: "Ethereum faucet list",
@@ -261,10 +261,18 @@ export default function Funding({
                 Copy faucet link
               </button>
             </div>
+            {network === "ethereum" && (
+              <p className="muted small">
+                Paste your public address into the Sepolia PoW faucet, start
+                browser work, then claim the test ETH it earns. No wallet app or
+                mainnet ETH is needed.
+              </p>
+            )}
             {config.faucet.includes("faucet.quicknode.com") && (
               <p className="muted small">
-                On QuickNode, skip “Connect Wallet.” Paste the address above
-                into the separate “Wallet Address” field, then continue.
+                QuickNode accepts a public address without connecting a wallet,
+                but may reject wallets without a mainnet balance. If that
+                happens, use the browser-work option below.
               </p>
             )}
             <details className="funding-options">

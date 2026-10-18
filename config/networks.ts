@@ -8,7 +8,7 @@ export const NETWORKS: Record<BlockchainNetwork, NetworkConfig> = {
     chainId: 11155111,
     rpcUrl: "/api/rpc/ethereum",
     explorer: "https://sepolia.etherscan.io",
-    faucet: "https://faucet.quicknode.com/ethereum/sepolia",
+    faucet: "https://sepolia-faucet.pk910.de/",
     logo: "⟠",
     color: "#627EEA",
   },
