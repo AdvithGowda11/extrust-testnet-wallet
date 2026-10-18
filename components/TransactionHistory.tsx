@@ -23,7 +23,6 @@ export default function TransactionHistory({
     <section aria-label="Transaction history">
       <div className="section-heading">
         <h2>Activity</h2>
-        <span className="section-overline">RECENT TRANSFERS</span>
       </div>
       {historyNotice && (
         <details className="history-note">
@@ -33,9 +32,7 @@ export default function TransactionHistory({
           <p>{historyNotice}</p>
         </details>
       )}
-      {!transactions.length && (
-        <p className="muted">No activity in the loaded history.</p>
-      )}
+      {!transactions.length && <p className="muted">No activity yet.</p>}
       {transactions.map((tx, i) => (
         <article
           className="transaction"

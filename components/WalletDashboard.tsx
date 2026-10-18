@@ -52,6 +52,15 @@ export default function WalletDashboard() {
       ? "bitcoin"
       : CHAINS.find((n) => wallet.accounts[n])!,
   );
+  const [orbitStep, setOrbitStep] = useState(
+    () =>
+      -CHAINS.filter((n) => wallet.accounts[n]).indexOf(
+        wallet.accounts.bitcoin
+          ? "bitcoin"
+          : CHAINS.find((n) => wallet.accounts[n])!,
+      ),
+  );
+  const selectedNetworkRef = useRef(network);
   const [menuOpen, setMenuOpen] = useState(false);
   const [screen, setScreen] = useState<
     "assets" | "send" | "token" | "export" | "backup" | "receive" | "fund"
@@ -79,11 +88,12 @@ export default function WalletDashboard() {
   >({});
   const [tokenHistoryError, setTokenHistoryError] = useState("");
   const [cursor, setCursor] = useState<string | undefined>();
-  const [updated, setUpdated] = useState<number | null>(null);
   const generation = useRef(0);
   const running = useRef(-1);
   const failures = useRef(0);
+  const ignoreOrbitClick = useRef(false);
   const orbitDrag = useRef<{
+    pointerId: number;
     startX: number;
     startY: number;
     angle: number;
@@ -92,24 +102,31 @@ export default function WalletDashboard() {
   } | null>(null);
   const account = wallet.accounts[network];
   const availableNetworks = CHAINS.filter((n) => wallet.accounts[n]);
-  const selectedNetworkIndex = availableNetworks.indexOf(network);
-  function rotateNetwork(direction: number) {
-    if (availableNetworks.length < 2) return;
-    setNetwork((current) => {
-      const currentIndex = availableNetworks.indexOf(current);
-      const next =
-        (currentIndex + direction + availableNetworks.length) %
-        availableNetworks.length;
-      return availableNetworks[next];
+  function selectNetwork(next: BlockchainNetwork) {
+    const count = availableNetworks.length;
+    const target = availableNetworks.indexOf(next);
+    if (target < 0) return;
+    selectedNetworkRef.current = next;
+    setOrbitStep((current) => {
+      const selected = ((-current % count) + count) % count;
+      let distance = target - selected;
+      if (distance > count / 2) distance -= count;
+      if (distance < -count / 2) distance += count;
+      return current - distance;
     });
+    setNetwork(next);
     setMenuOpen(false);
   }
+  function rotateNetwork(direction: number) {
+    const count = availableNetworks.length;
+    if (count < 2) return;
+    const current = availableNetworks.indexOf(selectedNetworkRef.current);
+    selectNetwork(availableNetworks[(current + direction + count) % count]);
+  }
   function orbitPosition(index: number) {
-    const offset =
-      (index - selectedNetworkIndex + availableNetworks.length) %
-      availableNetworks.length;
     const angle =
-      -Math.PI / 2 + (offset * 2 * Math.PI) / availableNetworks.length;
+      -Math.PI / 2 +
+      ((index + orbitStep) * 2 * Math.PI) / availableNetworks.length;
     const size = network === availableNetworks[index] ? 64 : 58;
     return {
       x: Math.cos(angle) * 110,
@@ -118,15 +135,13 @@ export default function WalletDashboard() {
   }
   function handleOrbitPointerDown(event: PointerEvent<HTMLDivElement>) {
     const target = event.target;
-    if (
-      target instanceof Element &&
-      target.closest(".network-tile, .tray-menu")
-    ) {
+    if (target instanceof Element && target.closest(".tray-menu")) {
       orbitDrag.current = null;
       return;
     }
     const bounds = event.currentTarget.getBoundingClientRect();
     orbitDrag.current = {
+      pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
       angle: Math.atan2(
@@ -139,13 +154,16 @@ export default function WalletDashboard() {
   }
   function handleOrbitPointerMove(event: PointerEvent<HTMLDivElement>) {
     const drag = orbitDrag.current;
-    if (!drag) return;
+    if (!drag || drag.pointerId !== event.pointerId) return;
     if (
       !drag.dragging &&
       Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 8
     )
       return;
-    drag.dragging = true;
+    if (!drag.dragging) {
+      drag.dragging = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     const bounds = event.currentTarget.getBoundingClientRect();
     const angle = Math.atan2(
       event.clientY - bounds.top - 140,
@@ -156,7 +174,7 @@ export default function WalletDashboard() {
     if (delta < -Math.PI) delta += Math.PI * 2;
     drag.angle = angle;
     drag.distance += delta;
-    const step = Math.PI / 6;
+    const step = Math.PI / 3;
     while (drag.distance >= step) {
       rotateNetwork(1);
       drag.distance -= step;
@@ -164,6 +182,19 @@ export default function WalletDashboard() {
     while (drag.distance <= -step) {
       rotateNetwork(-1);
       drag.distance += step;
+    }
+  }
+  function handleOrbitPointerEnd(event: PointerEvent<HTMLDivElement>) {
+    const drag = orbitDrag.current;
+    orbitDrag.current = null;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drag.dragging) {
+      if (event.currentTarget.hasPointerCapture(event.pointerId))
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      ignoreOrbitClick.current = true;
+      window.setTimeout(() => {
+        ignoreOrbitClick.current = false;
+      }, 0);
     }
   }
   const shortAddress = account?.address
@@ -210,7 +241,6 @@ export default function WalletDashboard() {
       if (native.status === "fulfilled") {
         setBalance(native.value.balance);
         setPending("pending" in native.value ? native.value.pending : "0");
-        setUpdated(Date.now());
         setConnectionError("");
         failures.current = 0;
       } else {
@@ -303,7 +333,6 @@ export default function WalletDashboard() {
     setHistoryError("");
     setNotice("");
     setHistoryNotice("");
-    setUpdated(null);
     setCursor(undefined);
     setTokenCursors({});
     setTokenHistoryError("");
@@ -406,8 +435,7 @@ export default function WalletDashboard() {
     return <AddToken network={network} onBack={back} onTokenAdded={back} />;
   if (screen === "export")
     return <ExportWallet wallet={wallet} onBack={back} />;
-  if (screen === "fund")
-    return <Funding wallet={wallet} onBack={back} />;
+  if (screen === "fund") return <Funding wallet={wallet} onBack={back} />;
   if (screen === "backup")
     return (
       <CloudBackup
@@ -432,9 +460,7 @@ export default function WalletDashboard() {
           </button>
         </div>
         <Notice>
-          Send only {NETWORKS[network].symbol} on {NETWORKS[network].name} to
-          this address. The same address on another network has a separate
-          balance.
+          Send only {NETWORKS[network].symbol} on {NETWORKS[network].name}.
         </Notice>
         {notice && <Notice>{notice}</Notice>}
         <ErrorNotice message={error} />
@@ -444,16 +470,9 @@ export default function WalletDashboard() {
           target="_blank"
           rel="noreferrer"
         >
-          Open test-coin funding options{" "}
-          <ExternalLink size={17} aria-hidden="true" />
+          Open faucet <ExternalLink size={17} aria-hidden="true" />
         </a>
-        <p className="muted small">
-          Faucets may require an account, CAPTCHA, or waiting period. Collect
-          enough for the transfer and network fee.
-        </p>
-        <button onClick={() => setScreen("fund")}>
-          Fund all six networks
-        </button>
+        <button onClick={() => setScreen("fund")}>Fund all six networks</button>
         <a
           href={explorerUrl(network, account!.address, "address")}
           target="_blank"
@@ -490,8 +509,7 @@ export default function WalletDashboard() {
               aria-label="Network"
               value={network}
               onChange={(e) => {
-                setNetwork(e.target.value as BlockchainNetwork);
-                setMenuOpen(false);
+                selectNetwork(e.target.value as BlockchainNetwork);
               }}
             >
               {CHAINS.map((n) => (
@@ -531,11 +549,8 @@ export default function WalletDashboard() {
             </strong>
             <p>
               {offline
-                ? "Reconnect to the internet. Your wallet will check this network again automatically."
-                : `We couldn’t verify this balance on ${NETWORKS[network].name}. ${connectionError}`}
-            </p>
-            <p>
-              Your encrypted wallet and saved activity remain on this device.
+                ? "Reconnect to check your balance."
+                : `Couldn’t check this balance. ${connectionError}`}
             </p>
             <button disabled={busy || offline} onClick={() => void refresh()}>
               {busy ? "Checking…" : "Retry network connection"}
@@ -583,9 +598,7 @@ export default function WalletDashboard() {
       {menuOpen && (
         <section className="wallet-action-menu" aria-label="Wallet menu">
           <h2>Quick actions</h2>
-          <button onClick={() => setScreen("fund")}>
-            Get free test coins
-          </button>
+          <button onClick={() => setScreen("fund")}>Get free test coins</button>
           {isEVM(network) && (
             <button onClick={() => setScreen("token")}>
               <Plus size={18} aria-hidden="true" /> Add token
@@ -607,7 +620,6 @@ export default function WalletDashboard() {
         <div className="tray-handle" aria-hidden="true" />
         <div className="tray-heading">
           <h2>Networks</h2>
-          <span>Drag around to rotate · tap a coin</span>
         </div>
         <div
           className="orbit-stage"
@@ -616,12 +628,8 @@ export default function WalletDashboard() {
           tabIndex={0}
           onPointerDown={handleOrbitPointerDown}
           onPointerMove={handleOrbitPointerMove}
-          onPointerUp={() => {
-            orbitDrag.current = null;
-          }}
-          onPointerCancel={() => {
-            orbitDrag.current = null;
-          }}
+          onPointerUp={handleOrbitPointerEnd}
+          onPointerCancel={handleOrbitPointerEnd}
           onKeyDown={(event) => {
             if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
               event.preventDefault();
@@ -637,6 +645,7 @@ export default function WalletDashboard() {
             return (
               <button
                 key={n}
+                data-network={n}
                 className={`network-tile ${n} ${n === network ? "selected" : ""}`}
                 style={
                   {
@@ -646,10 +655,9 @@ export default function WalletDashboard() {
                 }
                 aria-label={`Switch to ${NETWORKS[n].name}`}
                 aria-pressed={n === network}
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={() => {
-                  setNetwork(n);
-                  setMenuOpen(false);
+                onClick={(event) => {
+                  if (event.detail > 0 && ignoreOrbitClick.current) return;
+                  selectNetwork(n);
                 }}
               >
                 <span className={`network-coin ${n}`}>
@@ -672,18 +680,6 @@ export default function WalletDashboard() {
           </button>
         </div>
         <div className="wallet-details">
-          <p className="wallet-updated">
-            {updated ? (
-              <>
-                Last updated{" "}
-                <span className="financial-data">
-                  {new Date(updated).toLocaleTimeString()}
-                </span>
-              </>
-            ) : (
-              "Connecting to test network…"
-            )}
-          </p>
           {tokens.length > 0 && (
             <div className="tracked-assets">
               <h2>Tracked tokens</h2>
@@ -731,13 +727,6 @@ export default function WalletDashboard() {
               </button>
             </div>
           )}
-          {tokens.length > 0 && (
-            <p className="small muted">
-              Tracked ERC-20 transfers: latest 2,000 blocks, plus saved
-              activity. Load earlier ranges below. Internal contract calls are
-              available in the explorer.
-            </p>
-          )}
           {tokens
             .filter((t) => tokenCursors[t.address] !== undefined)
             .map((t) => (
@@ -773,22 +762,22 @@ export default function WalletDashboard() {
               Load older activity
             </button>
           )}
-          <button
-            onClick={() =>
-              download(
-                `transactions-${network}.json`,
-                JSON.stringify(
-                  transactions.map(({ signedTransaction, ...t }) => t),
-                  null,
-                  2,
-                ),
-              )
-            }
-          >
-            Export transaction evidence
-          </button>
           <details>
             <summary>Wallet settings and recovery</summary>
+            <button
+              onClick={() =>
+                download(
+                  `transactions-${network}.json`,
+                  JSON.stringify(
+                    transactions.map(({ signedTransaction, ...t }) => t),
+                    null,
+                    2,
+                  ),
+                )
+              }
+            >
+              Export transaction evidence
+            </button>
             <button onClick={() => setScreen("export")}>
               Export encrypted wallet / recovery keys
             </button>

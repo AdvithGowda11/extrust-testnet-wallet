@@ -90,26 +90,23 @@ test("six-network funding reports confirmed, pending and failed reads without ex
   const binance = page.getByRole("region", { name: "BNB Testnet" });
   await expect(
     binance.getByRole("link", { name: "Open faucet" }),
-  ).toHaveAttribute(
-    "href",
-    "https://faucet.quicknode.com/binance-smart-chain/bnb-testnet",
-  );
-  await expect(binance).toContainText(
-    "may reject wallets without a mainnet balance",
-  );
+  ).toHaveAttribute("href", "https://pow.zalalena.com/bsc");
+  await expect(page.getByText("How funding works")).toBeVisible();
   await expect(
     page
       .getByRole("region", { name: "Ethereum Sepolia" })
       .getByRole("link", { name: "Open faucet" }),
   ).toHaveAttribute("href", "https://sepolia-faucet.pk910.de/");
   await expect(
-    page.getByRole("region", { name: "Ethereum Sepolia" }),
-  ).toContainText("No wallet app or mainnet ETH is needed.");
+    page
+      .getByRole("region", { name: "Polygon Amoy" })
+      .getByRole("link", { name: "Open faucet" }),
+  ).toHaveAttribute("href", "https://pow.zalalena.com/polygon");
   await expect(
     page
       .getByRole("region", { name: "Base Sepolia" })
       .getByRole("link", { name: "Open faucet" }),
-  ).toHaveAttribute("href", "https://faucet.quicknode.com/base/sepolia");
+  ).toHaveAttribute("href", "https://pow.zalalena.com/base");
   await expect(
     bitcoin.getByRole("link", { name: "Open faucet" }),
   ).toHaveAttribute("href", "https://bitcoinsignetfaucet.com/");
@@ -120,15 +117,16 @@ test("six-network funding reports confirmed, pending and failed reads without ex
   await solana.getByRole("button", { name: "Copy address" }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toBe(await solana.locator("p.break").textContent());
+  await binance.getByText("Faucet not working? Other options").click();
   await binance.getByRole("button", { name: "Copy faucet link" }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-    "https://faucet.quicknode.com/binance-smart-chain/bnb-testnet",
+    "https://pow.zalalena.com/bsc",
   );
-  await binance.getByText("Faucet not working? Other options").click();
   await expect(
     binance.getByRole("link", { name: "BNB Chain support options" }),
   ).toBeVisible();
   const pendingDownload = page.waitForEvent("download");
+  await page.getByText("Export public addresses").click();
   await page
     .getByRole("button", { name: "Download public receiving addresses" })
     .click();
@@ -162,6 +160,58 @@ test("six-network funding reports confirmed, pending and failed reads without ex
   });
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.locator(".wallet-home")).toBeVisible();
+});
+
+test("coin selector accepts repeated left and right taps, drags, and keyboard input", async ({
+  page,
+  context,
+}) => {
+  await mockReads(context);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await createWallet(page);
+  const orbit = page.locator(".orbit-stage");
+  await orbit.scrollIntoViewIfNeeded();
+  for (let i = 0; i < 3; i += 1) {
+    for (const network of ["solana", "ethereum", "base", "bitcoin"] as const) {
+      await orbit.locator(`.network-tile.${network}`).click();
+      await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+        network,
+      );
+      await expect(orbit.locator(`.network-tile.${network}`)).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    }
+  }
+  const ethereum = orbit.locator(".network-tile.ethereum .network-coin");
+  const start = await ethereum.boundingBox();
+  const bounds = await orbit.boundingBox();
+  if (!start || !bounds) throw new Error("Coin selector bounds unavailable");
+  await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width / 2 + 50, bounds.y + 220, {
+    steps: 12,
+  });
+  await page.mouse.up();
+  await expect(page.getByLabel("Network", { exact: true })).not.toHaveValue(
+    "bitcoin",
+  );
+  await orbit.locator(".network-tile.bitcoin").click();
+  await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+    "bitcoin",
+  );
+  await orbit.focus();
+  const beforeKey = await page
+    .getByLabel("Network", { exact: true })
+    .inputValue();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByLabel("Network", { exact: true })).not.toHaveValue(
+    beforeKey,
+  );
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+    beforeKey,
+  );
 });
 test("encrypted onboarding, six networks, lock/reload/unlock and accessible receive screen", async ({
   page,
@@ -369,9 +419,10 @@ test("encrypted onboarding, six networks, lock/reload/unlock and accessible rece
   await expect(
     page.getByRole("heading", { name: "Receive test coins" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Open test-coin funding options" }),
-  ).toHaveAttribute("href", "https://bitcoinsignetfaucet.com/");
+  await expect(page.getByRole("link", { name: "Open faucet" })).toHaveAttribute(
+    "href",
+    "https://bitcoinsignetfaucet.com/",
+  );
   await page.screenshot({
     path: test.info().outputPath("receive.png"),
     fullPage: true,
@@ -500,6 +551,7 @@ test("wallet controls open settings, backup, exports, and keep the active vault"
     page.getByText("Use at least 12 characters for the cloud account password"),
   ).toBeVisible();
   await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByText("Wallet settings and recovery").click();
   const evidenceDownload = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Export transaction evidence" })
@@ -507,7 +559,6 @@ test("wallet controls open settings, backup, exports, and keep the active vault"
   expect((await evidenceDownload).suggestedFilename()).toBe(
     "transactions-bitcoin.json",
   );
-  await page.getByText("Wallet settings and recovery").click();
   await expect(
     page.getByRole("button", { name: "Remove local wallet" }),
   ).toBeVisible();

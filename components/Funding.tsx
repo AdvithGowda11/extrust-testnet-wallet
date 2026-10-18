@@ -25,7 +25,6 @@ const otherFaucets: Record<BlockchainNetwork, { name: string; url: string }[]> =
       { name: "OpenFaucet Amoy", url: "https://openfaucet.org/polygon-amoy" },
     ],
     binance: [
-      { name: "Browser-work BNB faucet", url: "https://pow.zalalena.com/bsc" },
       {
         name: "BNB Chain support options",
         url: "https://docs.bnbchain.org/docs/bsc-faucet/",
@@ -136,21 +135,16 @@ export default function Funding({
 
   return (
     <Screen title="Get free test coins" onBack={onBack}>
-      <p>
-        Copy your address, open its faucet, and request the native test coin on
-        the exact network shown. Return here and check balances after the faucet
-        sends it.
-      </p>
-      <p className="muted">
-        Faucets may require sign-in, CAPTCHA, or a cooldown. A faucet request
-        alone does not confirm a deposit. Fund both computers’ wallets
-        separately before the demonstration.
-      </p>
-      <p className="muted small">
-        If a faucet asks you to hold real coins on mainnet, skip it and use a
-        different option below. Faucet amounts and availability are set by the
-        provider, not by this wallet.
-      </p>
+      <p>Copy an address, open its faucet, then check your balance here.</p>
+      <details className="funding-options">
+        <summary>How funding works</summary>
+        <p className="muted small">
+          Browser-work faucets ask for a public address, verification, and a
+          short work session before you claim. Fund both wallets separately.
+          Claims can be delayed or limited. Never enter recovery words or pay
+          for test coins.
+        </p>
+      </details>
       <button
         className="primary"
         disabled={busy}
@@ -158,33 +152,33 @@ export default function Funding({
       >
         {busy ? "Checking balances…" : "Check balances"}
       </button>
-      <button
-        onClick={() =>
-          download(
-            "extrust-public-addresses.json",
-            JSON.stringify(
-              {
-                environment: "testnet",
-                accounts: networks.map((network) => ({
-                  network,
-                  networkId: NETWORKS[network].id,
-                  name: NETWORKS[network].name,
-                  symbol: NETWORKS[network].symbol,
-                  address: wallet.accounts[network]!.address,
-                })),
-              },
-              null,
-              2,
-            ),
-          )
-        }
-      >
-        Download public receiving addresses
-      </button>
-      <p className="muted small">
-        This address list contains no recovery words or private keys. It cannot
-        restore or unlock a wallet.
-      </p>
+      <details className="funding-options">
+        <summary>Export public addresses</summary>
+        <button
+          onClick={() =>
+            download(
+              "extrust-public-addresses.json",
+              JSON.stringify(
+                {
+                  environment: "testnet",
+                  accounts: networks.map((network) => ({
+                    network,
+                    networkId: NETWORKS[network].id,
+                    name: NETWORKS[network].name,
+                    symbol: NETWORKS[network].symbol,
+                    address: wallet.accounts[network]!.address,
+                  })),
+                },
+                null,
+                2,
+              ),
+            )
+          }
+        >
+          Download public receiving addresses
+        </button>
+        <p className="muted small">Addresses only. No recovery keys.</p>
+      </details>
       {notice && <Notice>{notice}</Notice>}
       <ErrorNotice message={error} />
       {networks.map((network) => {
@@ -234,16 +228,6 @@ export default function Funding({
                     </span>
                   </p>
                 )}
-                <p className="muted small">
-                  Checked{" "}
-                  <time
-                    className="financial-data"
-                    dateTime={new Date(value.checkedAt).toISOString()}
-                  >
-                    {new Date(value.checkedAt).toLocaleTimeString()}
-                  </time>
-                  . Send checks whether the balance covers your amount and fee.
-                </p>
               </>
             )}
             <ErrorNotice message={result?.error || ""} />
@@ -257,31 +241,16 @@ export default function Funding({
               >
                 Open faucet ↗
               </a>
-              <button onClick={() => void copyFaucet(network)}>
-                Copy faucet link
-              </button>
             </div>
-            {network === "ethereum" && (
-              <p className="muted small">
-                Paste your public address into the Sepolia PoW faucet, start
-                browser work, then claim the test ETH it earns. No wallet app or
-                mainnet ETH is needed.
-              </p>
-            )}
-            {config.faucet.includes("faucet.quicknode.com") && (
-              <p className="muted small">
-                QuickNode accepts a public address without connecting a wallet,
-                but may reject wallets without a mainnet balance. If that
-                happens, use the browser-work option below.
-              </p>
-            )}
             <details className="funding-options">
               <summary>Faucet not working? Other options</summary>
               <p className="muted small">
-                Use the same network and this card’s public address. If a link
-                does not open here, copy the faucet link and paste it into your
-                regular browser. Claims can be delayed, empty, or rate limited.
+                Use this network and public address. If the link does not open,
+                copy it into another browser.
               </p>
+              <button onClick={() => void copyFaucet(network)}>
+                Copy faucet link
+              </button>
               <ul>
                 {otherFaucets[network].map((option) => (
                   <li key={option.url}>

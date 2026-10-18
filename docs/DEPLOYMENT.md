@@ -86,8 +86,9 @@ wallet does not mean the local wallet was deleted.
    browser. Each funding card also has **Faucet not working? Other options**.
    These services may be empty, delayed, or rate limited. Do not buy coins for
    this demo. In particular, BNB Chain's own faucet may demand 0.002 real BNB
-   on BSC Mainnet; skip that route and use the linked QuickNode BNB Testnet
-   faucet, which advertises a free basic claim without a mainnet balance.
+   on BSC Mainnet; skip that route. The linked browser-work faucet asks for
+   your public address, verification, and a short work session. The same
+   approach is linked for Polygon Amoy and Base Sepolia.
 4. Return and click **Check balances**. A confirmed positive balance displays
    **Funds detected**. **Balance unavailable** is a failed read, not a zero balance.
    Bitcoin's pending net change is separate; wait for incoming outputs to confirm.
