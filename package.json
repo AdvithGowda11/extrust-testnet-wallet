@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:browser": "playwright test",
+    "test:build": "node scripts/check-build-artifacts.mjs",
     "check": "npm run typecheck && npm run lint && npm test",
     "test:networks": "node scripts/check-networks.mjs"
   },
