@@ -23,6 +23,11 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const cloudBackupRequested = useRef(false);
   const walletSetupRequested = useRef(false);
+  function walletReady() {
+    cloudBackupRequested.current = false;
+    walletSetupRequested.current = false;
+    setPage("dashboard");
+  }
   const initial = () => {
     try {
       const url = new URL(window.location.href);
@@ -70,6 +75,8 @@ export default function Home() {
     initial();
     const lock = () => {
       setPassword("");
+      cloudBackupRequested.current = false;
+      walletSetupRequested.current = false;
       initial();
     };
     const changed = (event: StorageEvent) => {
@@ -109,14 +116,14 @@ export default function Home() {
       } else {
         await StorageService.unlock(password);
         setPassword("");
-        setPage("dashboard");
+        walletReady();
       }
     } catch (e) {
       const message = errorMessage(e);
       setError(
         page === "unlock" &&
           message === "Incorrect passphrase or damaged backup"
-          ? "Incorrect passphrase for this encrypted wallet. Enter the local vault passphrase you created with this wallet, not its 12 recovery words or your cloud-account password. If you no longer know it, recover the wallet from its 12 words below."
+          ? "Incorrect passphrase or damaged encrypted data. Enter the local vault passphrase you created when saving this wallet. Its 12 recovery words are used through the recovery option below; your cloud-account password is separate."
           : message,
       );
     } finally {
@@ -137,7 +144,7 @@ export default function Home() {
           walletSetupRequested.current = false;
           initial();
         }}
-        onWalletCreated={() => setPage("dashboard")}
+        onWalletCreated={walletReady}
       />
     );
   if (page === "restore")
@@ -149,7 +156,7 @@ export default function Home() {
           cloudBackupRequested.current = false;
           initial();
         }}
-        onWalletRestored={() => setPage("dashboard")}
+        onWalletRestored={walletReady}
       />
     );
   if (page === "welcome")

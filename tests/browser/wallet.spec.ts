@@ -1,5 +1,6 @@
 import { test, expect, BrowserContext } from "@playwright/test";
 import { createWallet, password } from "./helpers";
+import { readFile } from "node:fs/promises";
 async function mockReads(context: BrowserContext, historyNotice?: string) {
   await context.route("**/api/balance/**", (route) =>
     route.fulfill({ json: { balance: "0", pending: "0" } }),
@@ -13,6 +14,121 @@ async function mockReads(context: BrowserContext, historyNotice?: string) {
     }),
   );
 }
+test("email setup saves a wallet that locks and unlocks without reopening setup", async ({
+  page,
+  context,
+}) => {
+  await mockReads(context);
+  await page.goto("/?screen=wallet-setup");
+  await page.getByRole("button", { name: "Generate recovery phrase" }).click();
+  await page
+    .getByLabel("Local vault passphrase", { exact: true })
+    .fill(password);
+  await page.getByLabel("Repeat passphrase").fill(password);
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Save encrypted wallet" }).click();
+  await expect(page.locator(".wallet-home")).toBeVisible();
+  const address = await page
+    .locator(".wallet-home")
+    .getAttribute("data-address");
+  await page.getByRole("button", { name: "Lock", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Unlock wallet" }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Local vault passphrase", { exact: true })
+    .fill(password);
+  await page.getByRole("button", { name: "Unlock", exact: true }).click();
+  await expect(page.locator(".wallet-home")).toHaveAttribute(
+    "data-address",
+    address!,
+  );
+});
+
+test("six-network funding reports confirmed, pending and failed reads without exposing keys", async ({
+  page,
+  context,
+}) => {
+  await mockReads(context);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await createWallet(page);
+  let failed = true;
+  await context.route("**/api/balance/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.includes("/polygon/") && failed)
+      return route.fulfill({
+        status: 502,
+        json: { error: "Test-network provider unavailable" },
+      });
+    return route.fulfill({
+      json: {
+        balance: path.includes("/solana/") ? "0.5" : "0",
+        pending: path.includes("/bitcoin/") ? "0.0001" : "0",
+      },
+    });
+  });
+  await page
+    .getByRole("button", { name: "Receive / fund", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Fund all six networks" }).click();
+  await expect(
+    page.getByRole("button", { name: "Check balances", exact: true }),
+  ).toBeEnabled();
+  await expect(page.locator(".funding-card")).toHaveCount(6);
+  const solana = page.getByRole("region", { name: "Solana Devnet" });
+  const bitcoin = page.getByRole("region", { name: "Bitcoin Signet" });
+  const polygon = page.getByRole("region", { name: "Polygon Amoy" });
+  await expect(solana).toContainText("Funds detected");
+  await expect(solana).toContainText("0.5 SOL");
+  await expect(bitcoin).toContainText("No confirmed funds yet");
+  await expect(bitcoin).toContainText("Pending net change: 0.0001 BTC");
+  await expect(polygon).toContainText("Balance unavailable");
+  await expect(polygon).not.toContainText("No confirmed funds");
+  await expect(
+    solana.getByRole("link", { name: "Open faucet" }),
+  ).toHaveAttribute("href", "https://faucet.solana.com/");
+  await expect(
+    solana.getByRole("link", { name: "Check deposits on explorer" }),
+  ).toHaveAttribute("href", /\?cluster=devnet$/);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await solana.getByRole("button", { name: "Copy address" }).click();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toBe(await solana.locator("p.break").textContent());
+  const pendingDownload = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download public receiving addresses" })
+    .click();
+  const downloaded = await pendingDownload;
+  const exported = JSON.parse(
+    await readFile((await downloaded.path())!, "utf8"),
+  );
+  expect(Object.keys(exported).sort()).toEqual(["accounts", "environment"]);
+  expect(exported.environment).toBe("testnet");
+  expect(exported.accounts).toHaveLength(6);
+  for (const account of exported.accounts)
+    expect(Object.keys(account).sort()).toEqual([
+      "address",
+      "name",
+      "network",
+      "networkId",
+      "symbol",
+    ]);
+  failed = false;
+  await page
+    .getByRole("button", { name: "Check balances", exact: true })
+    .click();
+  await expect(polygon).toContainText("No confirmed funds yet");
+  await expect(polygon).not.toContainText("provider unavailable");
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(375);
+  await page.screenshot({
+    path: test.info().outputPath("funding-mobile.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.locator(".wallet-home")).toBeVisible();
+});
 test("encrypted onboarding, six networks, lock/reload/unlock and accessible receive screen", async ({
   page,
   context,

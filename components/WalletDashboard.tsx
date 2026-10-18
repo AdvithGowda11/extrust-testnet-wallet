@@ -25,6 +25,7 @@ import TransactionHistory from "./TransactionHistory";
 import ExportWallet from "./ExportWallet";
 import CloudBackup from "./CloudBackup";
 import NetworkLogo from "./NetworkLogo";
+import Funding from "./Funding";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -53,7 +54,7 @@ export default function WalletDashboard() {
   );
   const [menuOpen, setMenuOpen] = useState(false);
   const [screen, setScreen] = useState<
-    "assets" | "send" | "token" | "export" | "backup" | "receive"
+    "assets" | "send" | "token" | "export" | "backup" | "receive" | "fund"
   >("assets");
   const [balance, setBalance] = useState<string | null>(null);
   const [pending, setPending] = useState("0");
@@ -401,6 +402,8 @@ export default function WalletDashboard() {
     return <AddToken network={network} onBack={back} onTokenAdded={back} />;
   if (screen === "export")
     return <ExportWallet wallet={wallet} onBack={back} />;
+  if (screen === "fund")
+    return <Funding wallet={wallet} onBack={back} />;
   if (screen === "backup")
     return (
       <CloudBackup
@@ -444,6 +447,9 @@ export default function WalletDashboard() {
           Faucets may require an account, CAPTCHA, or waiting period. Collect
           enough for the transfer and network fee.
         </p>
+        <button onClick={() => setScreen("fund")}>
+          Fund all six networks
+        </button>
         <a
           href={explorerUrl(network, account!.address, "address")}
           target="_blank"
@@ -573,6 +579,9 @@ export default function WalletDashboard() {
       {menuOpen && (
         <section className="wallet-action-menu" aria-label="Wallet menu">
           <h2>Quick actions</h2>
+          <button onClick={() => setScreen("fund")}>
+            Get free test coins
+          </button>
           {isEVM(network) && (
             <button onClick={() => setScreen("token")}>
               <Plus size={18} aria-hidden="true" /> Add token

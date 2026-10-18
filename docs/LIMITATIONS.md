@@ -34,7 +34,7 @@ No finite test suite establishes that nothing can fail. The following boundaries
 10. EVM replacement/cancellation workflows and Bitcoin fee bumping are not implemented. An unresolved transaction can require explorer/operator investigation.
 11. Public infrastructure and free hosting do not provide uptime guarantees. Polling is paused in hidden tabs and resumes when visible.
 12. Two browser contexts on one machine do not prove two-physical-computer networking. The physical demonstration remains an acceptance step.
-13. The attempted Solana faucet request failed; no twelve-transfer public-network acceptance result exists yet.
+13. Earlier automated Solana faucet requests failed. A later official-faucet deposit was observed in an earlier wallet, but the current two presentation wallets still need their balances verified individually. No twelve-transfer public-network acceptance result exists yet.
 
 ## History and asset boundaries
 

@@ -407,6 +407,28 @@ h2 {
   border-radius: 17px;
   background: #fffdfa;
 }
+.funding-card h2 {
+  flex: 1;
+  min-width: 0;
+}
+.funding-coin {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+}
+.funding-coin .network-logo {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+}
+.funding-card .actions > * {
+  padding: 12px 10px;
+  font-size: 0.85rem;
+}
 .row,
 .actions {
   display: flex;

@@ -1,5 +1,22 @@
 # Verification record — 2026-10-17
 
+## Online-demo preparation — 2026-10-18
+
+- TypeScript, lint (zero warnings), and all 26 unit tests passed.
+- The webpack production build passed. All 17 Chromium browser tests passed,
+  including the new email-setup → save → lock → unlock regression and six-network
+  funding screen with partial provider failure, retry, pending BTC, clipboard,
+  public-only address export and narrow-screen checks.
+- The transfer suite still uses simulated network responses: both directions on
+  each of the six networks passed, but these are not public blockchain settlements.
+- Read-only checks verified all six current test-network identities.
+- Hosting preparation and the two-computer runbook are in `docs/DEPLOYMENT.md`.
+  The Vercel connector authenticated but its project-workspace request returned
+  HTTP 403; browser-based setup is in progress. No public deployment or completed
+  twelve-transfer result is claimed by these checks.
+
+The dated results below are historical and refer to their stated commits/wallets.
+
 ## Automated checks
 
 - `npm run check`: TypeScript and ESLint passed; 26 unit tests passed.

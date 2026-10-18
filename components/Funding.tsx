@@ -1,0 +1,219 @@
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CHAINS, NETWORKS, explorerUrl } from "@/config/networks";
+import { BlockchainNetwork, MultiChainWallet } from "@/types";
+import { BlockchainService } from "@/services/blockchainService";
+import { errorMessage, parseAmount } from "@/lib/amounts";
+import { Screen, ErrorNotice, Notice, download } from "./Screen";
+import NetworkLogo from "./NetworkLogo";
+
+type Balance = { balance: string; pending: string; checkedAt: number };
+type Result = { value?: Balance; error?: string };
+
+export default function Funding({
+  wallet,
+  onBack,
+}: {
+  wallet: MultiChainWallet;
+  onBack: () => void;
+}) {
+  const [results, setResults] = useState<
+    Partial<Record<BlockchainNetwork, Result>>
+  >({});
+  const [busy, setBusy] = useState(true);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const generation = useRef(0);
+  const networks = CHAINS.filter((network) => wallet.accounts[network]);
+  const refresh = useCallback(async () => {
+    const id = ++generation.current;
+    setBusy(true);
+    setResults({});
+    await Promise.all(
+      CHAINS.filter((network) => wallet.accounts[network]).map(
+        async (network) => {
+          let result: Result;
+          try {
+            const value = await BlockchainService.getBalance(
+              wallet.accounts[network]!.address,
+              network,
+            );
+            parseAmount(value.balance, NETWORKS[network].decimals);
+            // Bitcoin's pending net change may be negative after an outgoing spend.
+            parseAmount(
+              value.pending.replace(/^-/, ""),
+              NETWORKS[network].decimals,
+            );
+            result = { value: { ...value, checkedAt: Date.now() } };
+          } catch (e) {
+            result = { error: errorMessage(e) };
+          }
+          if (generation.current === id)
+            setResults((previous) => ({ ...previous, [network]: result }));
+        },
+      ),
+    );
+    if (generation.current === id) setBusy(false);
+  }, [wallet]);
+  useEffect(() => {
+    const activeGeneration = generation;
+    void refresh();
+    return () => {
+      activeGeneration.current++;
+    };
+  }, [refresh]);
+
+  async function copy(network: BlockchainNetwork) {
+    setError("");
+    try {
+      await navigator.clipboard.writeText(wallet.accounts[network]!.address);
+      setNotice(`${NETWORKS[network].name} address copied.`);
+    } catch {
+      setError(
+        "Clipboard unavailable. Select and copy the address shown below.",
+      );
+    }
+  }
+
+  return (
+    <Screen title="Get free test coins" onBack={onBack}>
+      <p>
+        Copy your address, open its faucet, and request the native test coin on
+        the exact network shown. Return here and check balances after the faucet
+        sends it.
+      </p>
+      <p className="muted">
+        Faucets may require sign-in, CAPTCHA, or a cooldown. A faucet request
+        alone does not confirm a deposit. Fund both computers’ wallets
+        separately before the demonstration.
+      </p>
+      <button
+        className="primary"
+        disabled={busy}
+        onClick={() => void refresh()}
+      >
+        {busy ? "Checking balances…" : "Check balances"}
+      </button>
+      <button
+        onClick={() =>
+          download(
+            "extrust-public-addresses.json",
+            JSON.stringify(
+              {
+                environment: "testnet",
+                accounts: networks.map((network) => ({
+                  network,
+                  networkId: NETWORKS[network].id,
+                  name: NETWORKS[network].name,
+                  symbol: NETWORKS[network].symbol,
+                  address: wallet.accounts[network]!.address,
+                })),
+              },
+              null,
+              2,
+            ),
+          )
+        }
+      >
+        Download public receiving addresses
+      </button>
+      <p className="muted small">
+        This address list contains no recovery words or private keys. It cannot
+        restore or unlock a wallet.
+      </p>
+      {notice && <Notice>{notice}</Notice>}
+      <ErrorNotice message={error} />
+      {networks.map((network) => {
+        const config = NETWORKS[network];
+        const result = results[network];
+        const value = result?.value;
+        const funded =
+          value && parseAmount(value.balance, config.decimals) > 0n;
+        return (
+          <section
+            className="card funding-card"
+            key={network}
+            aria-label={config.name}
+          >
+            <div className="row">
+              <span
+                className="funding-coin"
+                style={{ background: config.color }}
+                aria-hidden="true"
+              >
+                <NetworkLogo network={network} />
+              </span>
+              <h2>{config.name}</h2>
+            </div>
+            <p className="break financial-data">
+              {wallet.accounts[network]!.address}
+            </p>
+            <p role="status">
+              {!result
+                ? "Checking balance…"
+                : result.error
+                  ? "Balance unavailable"
+                  : funded
+                    ? "Funds detected"
+                    : "No confirmed funds yet"}
+            </p>
+            {value && (
+              <>
+                <p className="financial-data">
+                  {value.balance} {config.symbol}
+                </p>
+                {value.pending !== "0" && (
+                  <p>
+                    Pending net change:{" "}
+                    <span className="financial-data">
+                      {value.pending} {config.symbol}
+                    </span>
+                  </p>
+                )}
+                <p className="muted small">
+                  Checked{" "}
+                  <time
+                    className="financial-data"
+                    dateTime={new Date(value.checkedAt).toISOString()}
+                  >
+                    {new Date(value.checkedAt).toLocaleTimeString()}
+                  </time>
+                  . Send checks whether the balance covers your amount and fee.
+                </p>
+              </>
+            )}
+            <ErrorNotice message={result?.error || ""} />
+            <div className="actions">
+              <button onClick={() => void copy(network)}>Copy address</button>
+              <a
+                className="button"
+                href={config.faucet}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open faucet ↗
+              </a>
+            </div>
+            <a
+              href={explorerUrl(
+                network,
+                wallet.accounts[network]!.address,
+                "address",
+              )}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Check deposits on explorer ↗
+            </a>
+            {network === "bitcoin" && (
+              <p className="muted small">
+                Signet only. Incoming coins must confirm before this wallet can
+                spend them.
+              </p>
+            )}
+          </section>
+        );
+      })}
+    </Screen>
+  );
+}
