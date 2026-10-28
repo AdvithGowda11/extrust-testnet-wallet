@@ -14,6 +14,7 @@ alter table public.wallet_backups alter column format_version set default 2;
 alter table public.wallet_backups enable row level security;
 alter table public.wallet_backups force row level security;
 revoke all on public.wallet_backups from anon;
+revoke truncate, references, trigger on public.wallet_backups from authenticated;
 grant select,insert,update,delete on public.wallet_backups to authenticated;
 -- Old permissive policies combine with OR, so remove policies on this dedicated table.
 do $$ declare p record; begin

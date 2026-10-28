@@ -287,10 +287,7 @@ export default function CloudBackup({
               </button>
             )}
             <p className="muted">
-              Your Google login and Google password do not work here. Use the
-              Gmail address that belongs to the Supabase project team, then
-              create a separate wallet cloud password with at least 12
-              characters.
+              Use a separate cloud password with at least 12 characters.
             </p>
           </>
         ) : (

@@ -433,6 +433,21 @@ test("encrypted onboarding, six networks, lock/reload/unlock and accessible rece
     page.getByRole("heading", { name: "Unlock wallet" }),
   ).toBeVisible();
   await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Unlock wallet" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Download locked encrypted vault" }),
+  ).toBeHidden();
+  await page.getByText("Wallet help", { exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Download locked encrypted vault" }),
+  ).toBeVisible();
+  await page.getByText("Wallet help", { exact: true }).click();
+  await page.screenshot({
+    path: "/private/tmp/extrust-unlock-preview.png",
+    fullPage: true,
+  });
   await page.getByLabel("Local vault passphrase").fill("incorrect password");
   await page.getByRole("button", { name: "Unlock", exact: true }).click();
   await expect(page.locator(".notice.error")).toContainText(
@@ -538,7 +553,9 @@ test("wallet controls open settings, backup, exports, and keep the active vault"
     page.getByLabel("Wallet cloud password (not your Google password)"),
   ).toBeVisible();
   await expect(
-    page.getByText("Your Google login and Google password do not work here."),
+    page.getByText(
+      "Use a separate cloud password with at least 12 characters.",
+    ),
   ).toBeVisible();
   await page.getByLabel("Email").fill("wallet-owner@example.com");
   await page

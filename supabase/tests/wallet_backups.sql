@@ -1,5 +1,11 @@
 -- Run against a migrated test project. All fixtures are rolled back.
 begin;
+do $$ begin
+ if has_table_privilege('authenticated','public.wallet_backups','TRUNCATE')
+ or has_table_privilege('authenticated','public.wallet_backups','TRIGGER')
+ or has_table_privilege('authenticated','public.wallet_backups','REFERENCES')
+ then raise exception 'Unnecessary backup privileges remain'; end if;
+end $$;
 insert into auth.users (id) values
  ('f21d14c9-5606-44cd-9eca-33523ee10201'),
  ('f21d14c9-5606-44cd-9eca-33523ee10202');

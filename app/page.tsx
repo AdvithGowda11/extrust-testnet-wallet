@@ -128,7 +128,7 @@ export default function Home() {
       setError(
         page === "unlock" &&
           message === "Incorrect passphrase or damaged backup"
-          ? "Incorrect passphrase or damaged encrypted data. Enter the local vault passphrase you created when saving this wallet. Its 12 recovery words are used through the recovery option below; your cloud-account password is separate."
+          ? "Incorrect passphrase or damaged encrypted data. Try your local wallet password, or recover with your 12 words."
           : message,
       );
     } finally {
@@ -199,12 +199,7 @@ export default function Home() {
           preserve its exact original data. Its keys will not be changed or used
           on test networks.
         </p>
-      ) : (
-        <p>
-          Your encrypted wallet stays on this device. It locks after five
-          minutes without keyboard or pointer activity.
-        </p>
-      )}
+      ) : null}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -225,13 +220,6 @@ export default function Home() {
             required
           />
         </label>
-        {page === "unlock" && (
-          <p className="muted">
-            This is the local password created when this encrypted wallet was
-            saved. The 12 recovery words are used through “Create or recover a
-            different wallet.”
-          </p>
-        )}
         <ErrorNotice message={error} />
         <button className="primary" disabled={busy || !password}>
           {busy
@@ -246,24 +234,27 @@ export default function Home() {
           <button onClick={() => setPage("restore")}>
             Restore encrypted file or cloud backup
           </button>
-          <button
-            onClick={() =>
-              download(
-                "extrust-testnet-wallet.json",
-                StorageService.encryptedVault(),
-              )
-            }
-          >
-            Download locked encrypted vault
-          </button>
           <button onClick={() => setPage("create")}>
             Create or recover a different wallet
           </button>
-          <p className="muted">
-            Cloud sign-in manages encrypted backups. It does not create a new
-            wallet. To generate new recovery words or enter existing ones, use
-            “Create or recover a different wallet.”
-          </p>
+          <details className="funding-options">
+            <summary>Wallet help</summary>
+            <p className="muted small">
+              Unlock with this browser’s local password. Use your 12 recovery
+              words through “Create or recover a different wallet.” Cloud
+              sign-in is for backups. Your wallet locks after five idle minutes.
+            </p>
+            <button
+              onClick={() =>
+                download(
+                  "extrust-testnet-wallet.json",
+                  StorageService.encryptedVault(),
+                )
+              }
+            >
+              Download locked encrypted vault
+            </button>
+          </details>
         </>
       )}
     </Screen>
