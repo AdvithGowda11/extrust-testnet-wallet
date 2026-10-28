@@ -18,9 +18,15 @@ for (const [name, width, height] of [
       route.fulfill({ json: { transactions: [] } }),
     );
     await createWallet(page);
+    await expect(page.locator("body")).toHaveCSS(
+      "background-color",
+      "rgb(0, 0, 0)",
+    );
     const frame = page.locator(".mobile-container");
     expect(await frame.evaluate((element) => element.scrollTop)).toBe(0);
-    await page.screenshot({ path: test.info().outputPath(`wallet-frame-${name}.png`) });
+    await page.screenshot({
+      path: test.info().outputPath(`wallet-frame-${name}.png`),
+    });
     await page
       .getByRole("button", { name: "Receive / fund", exact: true })
       .click();
@@ -53,9 +59,15 @@ for (const [name, width, height] of [
     await expect
       .poll(() => frame.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await page.getByRole("region", { name: "Bitcoin Signet" }).scrollIntoViewIfNeeded();
-    await expect(page.getByRole("region", { name: "Bitcoin Signet" })).toBeInViewport();
-    expect(await frame.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await page
+      .getByRole("region", { name: "Bitcoin Signet" })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      page.getByRole("region", { name: "Bitcoin Signet" }),
+    ).toBeInViewport();
+    expect(
+      await frame.evaluate((element) => element.scrollTop),
+    ).toBeGreaterThan(0);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),

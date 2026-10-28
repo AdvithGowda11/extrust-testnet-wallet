@@ -41,6 +41,7 @@
 }
 html {
   scroll-behavior: smooth;
+  background: #000;
 }
 body {
   min-width: 320px;
@@ -49,7 +50,7 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: linear-gradient(145deg, #ddc4a8, #f0b772 45%, #e9ac9e);
+  background: #000;
   color: var(--ink);
   font: 16px/1.5 var(--font-copy);
 }
@@ -1206,9 +1207,6 @@ dd {
   font-size: 0.86rem;
 }
 @media (max-width: 520px) {
-  body {
-    background: white;
-  }
   .mobile-container {
     width: 100%;
     max-width: none;
