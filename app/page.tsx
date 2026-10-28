@@ -245,18 +245,24 @@ export default function Home() {
               setPage("recover");
             }}
           >
-            Recover with 12 words
+            Recover wallet
+          </button>
+          <button
+            onClick={() => {
+              setPassword("");
+              setError("");
+              setPage("create");
+            }}
+          >
+            Create wallet
           </button>
           <details className="funding-options">
             <summary>Wallet help</summary>
             <p className="muted small">
-              Unlock with this browser’s local password. Use your 12 recovery
-              words through “Recover with 12 words.” Cloud sign-in is for
-              backups. Your wallet locks after five idle minutes.
+              Unlock with this browser’s local password. Use your recovery words
+              through “Recover wallet.” Cloud sign-in is for backups. Your
+              wallet locks after five idle minutes.
             </p>
-            <button onClick={() => setPage("create")}>
-              Create a different wallet
-            </button>
             <button
               onClick={() =>
                 download(

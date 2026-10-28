@@ -33,7 +33,7 @@ test("12-word recovery restores all six original addresses and unlocks with the 
   );
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Recover with 12 words", exact: true })
+    .getByRole("button", { name: "Recover wallet", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Recover wallet", exact: true }),
@@ -42,7 +42,9 @@ test("12-word recovery restores all six original addresses and unlocks with the 
     page.getByRole("button", { name: "Generate recovery phrase" }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Back", exact: true }).click();
-  await page.getByRole("button", { name: "Create or import wallet" }).click();
+  await page
+    .getByRole("button", { name: "Create wallet", exact: true })
+    .click();
   await page.getByRole("button", { name: "Generate recovery phrase" }).click();
   const phrase = (await page
     .getByLabel("Recovery phrase", { exact: true })
@@ -60,7 +62,7 @@ test("12-word recovery restores all six original addresses and unlocks with the 
   );
   await page.getByRole("button", { name: "Lock", exact: true }).click();
   await page
-    .getByRole("button", { name: "Recover with 12 words", exact: true })
+    .getByRole("button", { name: "Recover wallet", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Recover wallet", exact: true }),

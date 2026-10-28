@@ -24,12 +24,12 @@ export default function Welcome({
         </h2>
       </div>
       <button className="primary" onClick={onGetStarted}>
-        Create or import wallet <ArrowRight size={18} aria-hidden="true" />
+        Create wallet <ArrowRight size={18} aria-hidden="true" />
       </button>
       <button onClick={onRestore}>
         <KeyRound size={18} aria-hidden="true" /> Restore encrypted backup
       </button>
-      <button onClick={onRecover}>Recover with 12 words</button>
+      <button onClick={onRecover}>Recover wallet</button>
     </Screen>
   );
 }

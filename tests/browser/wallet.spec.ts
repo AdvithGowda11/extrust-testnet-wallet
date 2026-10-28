@@ -258,7 +258,7 @@ for (const imported of [false, true]) {
     if (imported) {
       await page.goto("/");
       await page
-        .getByRole("button", { name: "Create or import wallet" })
+        .getByRole("button", { name: "Create wallet", exact: true })
         .click();
       await page.getByLabel("Wallet source").selectOption("key");
       await page
@@ -856,7 +856,7 @@ test("email confirmation opens safe wallet setup instead of the locked vault", a
   await page.getByRole("button", { name: "Lock", exact: true }).click();
   await page.goto("/?screen=wallet-setup");
   await expect(
-    page.getByRole("heading", { name: "Create or import" }),
+    page.getByRole("heading", { name: "Create wallet", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("A locked wallet already exists on this browser."),
@@ -878,9 +878,8 @@ test("locked wallet offers a safe create or phrase-recovery path", async ({
   await mockReads(context);
   await createWallet(page);
   await page.getByRole("button", { name: "Lock", exact: true }).click();
-  await page.getByText("Wallet help", { exact: true }).click();
   await page
-    .getByRole("button", { name: "Create a different wallet", exact: true })
+    .getByRole("button", { name: "Create wallet", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Generate recovery phrase" }),

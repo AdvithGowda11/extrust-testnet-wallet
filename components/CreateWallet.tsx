@@ -61,7 +61,13 @@ export default function CreateWallet({
   }
   return (
     <Screen
-      title={recovery ? "Recover wallet" : "Create or import"}
+      title={
+        recovery
+          ? "Recover wallet"
+          : mode === "create"
+            ? "Create wallet"
+            : "Import wallet"
+      }
       onBack={onBack}
     >
       {replacingWallet && (
