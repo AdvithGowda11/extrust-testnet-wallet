@@ -27,6 +27,9 @@ export default function CreateWallet({
   const [confirmReplacement, setConfirmReplacement] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const wordCount = WalletService.normalizeMnemonic(phrase)
+    .split(" ")
+    .filter(Boolean).length;
   const replacingWallet = StorageService.hasWallet();
   async function save() {
     setError("");
@@ -37,6 +40,10 @@ export default function CreateWallet({
         throw new Error("Confirm that you saved your recovery information");
       if (replacingWallet && !confirmReplacement)
         throw new Error("Confirm replacement of the current local wallet");
+      if (mode !== "key") {
+        const issue = WalletService.recoveryPhraseIssue(phrase);
+        if (issue) throw new Error(issue);
+      }
       const wallet =
         mode === "key"
           ? WalletService.fromPrivateKey(secret, network)
@@ -113,15 +120,24 @@ export default function CreateWallet({
           )}
         </>
       ) : mode === "phrase" ? (
-        <label>
-          Recovery phrase
-          <textarea
-            autoComplete="off"
-            spellCheck={false}
-            value={phrase}
-            onChange={(e) => setPhrase(e.target.value)}
-          />
-        </label>
+        <>
+          <label>
+            Recovery phrase
+            <textarea
+              autoComplete="off"
+              spellCheck={false}
+              aria-describedby="recovery-word-count"
+              value={phrase}
+              onChange={(e) => {
+                setPhrase(e.target.value);
+                setError("");
+              }}
+            />
+          </label>
+          <p id="recovery-word-count" className="muted small" role="status">
+            {wordCount} words. Use words only, without numbering or punctuation.
+          </p>
+        </>
       ) : (
         <>
           <label>

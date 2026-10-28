@@ -8,6 +8,7 @@ import { parseAmount, formatAmount } from "../lib/amounts";
 import { NETWORKS, sameAddress } from "../config/networks";
 import { validateRpc } from "../lib/rpcPolicy";
 import { Wallet } from "ethers";
+import * as bip39 from "bip39";
 import { BlockchainService, requestJson } from "../services/blockchainService";
 import { Transaction } from "../types";
 const phrase =
@@ -30,8 +31,10 @@ class MemoryStorage {
 const local = new MemoryStorage();
 Object.defineProperty(globalThis, "localStorage", { value: local });
 test("hosting rate limits give recovery guidance even with an HTML response", async (t) => {
-  t.mock.method(globalThis, "fetch", async () =>
-    new Response("<html>Too Many Requests</html>", { status: 429 }),
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response("<html>Too Many Requests</html>", { status: 429 }),
   );
   await assert.rejects(
     () => requestJson("/api/balance/ethereum/test"),
@@ -81,6 +84,48 @@ test("recovery reproduces all keys, and imported accounts remain independent of 
   assert.equal(imported.mnemonic, undefined);
   assert.deepEqual(Object.keys(imported.accounts), ["solana"]);
   WalletService.validateWallet(imported);
+});
+test("recovery diagnostics accept standard BIP39 lengths, case and whitespace", () => {
+  for (const bytes of [16, 20, 24, 28, 32])
+    assert.equal(
+      WalletService.recoveryPhraseIssue(
+        bip39.entropyToMnemonic("00".repeat(bytes)),
+      ),
+      null,
+    );
+  assert.equal(
+    WalletService.recoveryPhraseIssue(
+      `  ${phrase.toUpperCase().replaceAll(" ", "\n\t")}  `,
+    ),
+    null,
+  );
+});
+test("recovery diagnostics report word counts without echoing password input", () => {
+  const passwordInput = "Secret123456";
+  const issue = WalletService.recoveryPhraseIssue(passwordInput);
+  assert.ok(issue);
+  assert.match(issue, /^Invalid recovery phrase\./);
+  assert.match(issue, /found 1\./);
+  assert.ok(!issue.includes(passwordInput));
+  assert.match(WalletService.recoveryPhraseIssue("")!, /found 0\./);
+});
+test("recovery diagnostics identify invalid word positions without echoing words", () => {
+  const words = phrase.split(" ");
+  words[1] = "notaword";
+  words[9] = "anotherinvalidword";
+  const issue = WalletService.recoveryPhraseIssue(words.join(" "));
+  assert.ok(issue);
+  assert.match(issue, /^Invalid recovery phrase\./);
+  assert.match(issue, /word positions 2, 10/);
+  for (const word of words) assert.ok(!issue.includes(word));
+});
+test("recovery diagnostics reject recognized words with an invalid checksum", () => {
+  const issue = WalletService.recoveryPhraseIssue("abandon ".repeat(12));
+  assert.ok(issue);
+  assert.match(issue, /^Invalid recovery phrase\./);
+  assert.match(issue, /checksum does not match/);
+  assert.match(issue, /original order and spelling/);
+  assert.ok(!issue.includes("abandon"));
 });
 test("wallet validation rejects mainnet, bad keys, wrong addresses and incorrect mnemonic provenance", () => {
   const w = WalletService.createMultiChainWallet(phrase);

@@ -110,6 +110,13 @@ test("12-word recovery restores all six original addresses and unlocks with the 
   await expect(page.locator(".notice.error").last()).toContainText(
     "Invalid recovery phrase",
   );
+  await expect(page.locator(".notice.error").last()).toContainText(
+    "checksum does not match",
+  );
+  await expect(page.locator(".notice.error").last()).not.toContainText(
+    "abandon",
+  );
+  await expect(page.locator("#recovery-word-count")).toContainText("12 words");
   expect(
     await page.evaluate(() => localStorage.getItem("extrust:testnet:v2:vault")),
   ).toBe(originalVault);

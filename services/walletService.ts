@@ -22,6 +22,20 @@ export class WalletService {
   static validateMnemonic(value: string) {
     return bip39.validateMnemonic(this.normalizeMnemonic(value));
   }
+  static recoveryPhraseIssue(value: string): string | null {
+    const normalized = this.normalizeMnemonic(value);
+    const words = normalized ? normalized.split(" ") : [];
+    if (![12, 15, 18, 21, 24].includes(words.length))
+      return `Invalid recovery phrase. Enter 12, 15, 18, 21, or 24 words separated by spaces; found ${words.length}.`;
+    const invalidPositions = words.flatMap((word, index) =>
+      bip39.wordlists.english.includes(word) ? [] : [index + 1],
+    );
+    if (invalidPositions.length)
+      return `Invalid recovery phrase. Check the spelling of word positions ${invalidPositions.join(", ")} against your original backup.`;
+    if (!bip39.validateMnemonic(normalized, bip39.wordlists.english))
+      return "Invalid recovery phrase. All words are recognized, but the checksum does not match. Check the original order and spelling.";
+    return null;
+  }
   static importAccount(
     privateKey: string,
     network: BlockchainNetwork,
