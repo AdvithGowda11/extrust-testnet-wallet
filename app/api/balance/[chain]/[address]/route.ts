@@ -22,21 +22,20 @@ export async function GET(
       pending = "0";
     if (isEVM(chain)) {
       if (!isAddress(address)) throw new HttpError("Invalid address");
-      await verifyNetwork(chain);
-      balance = formatAmount(
-        BigInt(await rpc(chain, "eth_getBalance", [address, "latest"])),
-        18,
-      );
+      const [, value] = await Promise.all([
+        verifyNetwork(chain),
+        rpc(chain, "eth_getBalance", [address, "latest"]),
+      ]);
+      balance = formatAmount(BigInt(value), 18);
     } else if (chain === "solana") {
       try {
         new PublicKey(address);
       } catch {
         throw new HttpError("Invalid Solana address");
       }
-      await verifyNetwork(chain);
-      const result = await rpc(chain, "getBalance", [
-        address,
-        { commitment: "confirmed" },
+      const [, result] = await Promise.all([
+        verifyNetwork(chain),
+        rpc(chain, "getBalance", [address, { commitment: "confirmed" }]),
       ]);
       if (!Number.isSafeInteger(result.value))
         throw new HttpError("Unsupported balance precision", 502);

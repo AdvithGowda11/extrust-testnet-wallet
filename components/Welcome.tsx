@@ -5,9 +5,11 @@ import NetworkLogo from "./NetworkLogo";
 export default function Welcome({
   onGetStarted,
   onRestore,
+  onRecover,
 }: {
   onGetStarted: () => void;
   onRestore: () => void;
+  onRecover: () => void;
 }) {
   return (
     <Screen title="Your six-network test wallet">
@@ -27,6 +29,7 @@ export default function Welcome({
       <button onClick={onRestore}>
         <KeyRound size={18} aria-hidden="true" /> Restore encrypted backup
       </button>
+      <button onClick={onRecover}>Recover with 12 words</button>
     </Screen>
   );
 }

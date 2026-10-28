@@ -90,6 +90,8 @@ export default function WalletDashboard() {
   const [cursor, setCursor] = useState<string | undefined>();
   const generation = useRef(0);
   const running = useRef(-1);
+  const historyRunning = useRef(-1);
+  const tokenBalancesRunning = useRef(-1);
   const failures = useRef(0);
   const ignoreOrbitClick = useRef(false);
   const orbitDrag = useRef<{
@@ -214,45 +216,19 @@ export default function WalletDashboard() {
       setError("Clipboard unavailable. Select and copy the address manually.");
     }
   }
-  const refresh = useCallback(async () => {
+  const refreshHistory = useCallback(async () => {
     const id = generation.current;
-    if (!account || running.current === id || !StorageService.getWallet())
+    if (
+      !account ||
+      historyRunning.current === id ||
+      !StorageService.getWallet()
+    )
       return;
-    running.current = id;
-    setBusy(true);
+    historyRunning.current = id;
     try {
       const stored = StorageService.getTokens().filter(
         (t) => t.network === network,
       );
-      const balances = await Promise.allSettled([
-        BlockchainService.getBalance(account.address, network),
-        ...stored.map((t) =>
-          BlockchainService.getTokenBalance(
-            t.address,
-            account.address,
-            network,
-          ),
-        ),
-      ]);
-      if (id !== generation.current) return;
-      setTokens(stored);
-      const native = balances[0];
-      if (native.status === "fulfilled") {
-        setBalance(native.value.balance);
-        setPending("pending" in native.value ? native.value.pending : "0");
-        setConnectionError("");
-        failures.current = 0;
-      } else {
-        setBalance(null);
-        setConnectionError(errorMessage(native.reason));
-        failures.current++;
-      }
-      const values: Record<string, string> = {};
-      stored.forEach((t, i) => {
-        const r = balances[i + 1];
-        if (r.status === "fulfilled") values[t.address] = r.value.balance;
-      });
-      setTokenBalances(values);
       const local = StorageService.getTransactions().filter(
         (t) => t.network === network,
       );
@@ -311,6 +287,66 @@ export default function WalletDashboard() {
       if (id === generation.current)
         setTokenHistoryError(tokenErrors.join("; "));
     } catch (e) {
+      if (id === generation.current) setHistoryError(errorMessage(e));
+    } finally {
+      if (historyRunning.current === id) historyRunning.current = -1;
+    }
+  }, [account, network]);
+  const refresh = useCallback(async () => {
+    const id = generation.current;
+    if (!account || running.current === id || !StorageService.getWallet())
+      return;
+    running.current = id;
+    setBusy(true);
+    try {
+      const stored = StorageService.getTokens().filter(
+        (t) => t.network === network,
+      );
+      setTokens(stored);
+      void refreshHistory();
+      const native = BlockchainService.getBalance(account.address, network)
+        .then((value) => {
+          if (id !== generation.current || !StorageService.getWallet()) return;
+          setBalance(value.balance);
+          setPending(value.pending);
+          setConnectionError("");
+          failures.current = 0;
+        })
+        .catch((e) => {
+          if (id !== generation.current) return;
+          setBalance(null);
+          setConnectionError(errorMessage(e));
+          failures.current++;
+        });
+      if (tokenBalancesRunning.current !== id) {
+        tokenBalancesRunning.current = id;
+        void Promise.allSettled(
+          stored.map((t) =>
+            BlockchainService.getTokenBalance(
+              t.address,
+              account.address,
+              network,
+            ),
+          ),
+        )
+          .then((balances) => {
+            if (id !== generation.current || !StorageService.getWallet())
+              return;
+            const values: Record<string, string> = {};
+            stored.forEach((t, i) => {
+              const result = balances[i];
+              if (result.status === "fulfilled")
+                values[t.address] = result.value.balance;
+            });
+            setTokenBalances(values);
+          })
+          .finally(() => {
+            if (tokenBalancesRunning.current === id)
+              tokenBalancesRunning.current = -1;
+          });
+      }
+      await native;
+    } catch (e) {
       if (id === generation.current) {
         setBalance(null);
         setConnectionError(errorMessage(e));
@@ -319,7 +355,7 @@ export default function WalletDashboard() {
       if (running.current === id) running.current = -1;
       if (id === generation.current) setBusy(false);
     }
-  }, [account, network]);
+  }, [account, network, refreshHistory]);
   useEffect(() => {
     const marker = ++generation.current;
     setBalance(null);

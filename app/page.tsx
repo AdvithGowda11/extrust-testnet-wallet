@@ -12,6 +12,7 @@ type Page =
   | "loading"
   | "welcome"
   | "create"
+  | "recover"
   | "unlock"
   | "dashboard"
   | "restore"
@@ -142,9 +143,11 @@ export default function Home() {
       </Screen>
     );
   if (page === "dashboard") return <WalletDashboard />;
-  if (page === "create")
+  if (page === "create" || page === "recover")
     return (
       <CreateWallet
+        key={page}
+        recovery={page === "recover"}
         onBack={() => {
           walletSetupRequested.current = false;
           initial();
@@ -170,6 +173,7 @@ export default function Home() {
         <Welcome
           onGetStarted={() => setPage("create")}
           onRestore={() => setPage("restore")}
+          onRecover={() => setPage("recover")}
         />
         {StorageService.legacyArchive() && (
           <div className="screen-body">
@@ -234,16 +238,25 @@ export default function Home() {
           <button onClick={() => setPage("restore")}>
             Restore encrypted file or cloud backup
           </button>
-          <button onClick={() => setPage("create")}>
-            Create or recover a different wallet
+          <button
+            onClick={() => {
+              setPassword("");
+              setError("");
+              setPage("recover");
+            }}
+          >
+            Recover with 12 words
           </button>
           <details className="funding-options">
             <summary>Wallet help</summary>
             <p className="muted small">
               Unlock with this browser’s local password. Use your 12 recovery
-              words through “Create or recover a different wallet.” Cloud
-              sign-in is for backups. Your wallet locks after five idle minutes.
+              words through “Recover with 12 words.” Cloud sign-in is for
+              backups. Your wallet locks after five idle minutes.
             </p>
+            <button onClick={() => setPage("create")}>
+              Create a different wallet
+            </button>
             <button
               onClick={() =>
                 download(

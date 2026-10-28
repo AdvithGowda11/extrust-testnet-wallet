@@ -9,11 +9,15 @@ import { Screen, ErrorNotice, download } from "./Screen";
 export default function CreateWallet({
   onWalletCreated,
   onBack,
+  recovery = false,
 }: {
   onWalletCreated: () => void;
   onBack: () => void;
+  recovery?: boolean;
 }) {
-  const [mode, setMode] = useState<"create" | "phrase" | "key">("create");
+  const [mode, setMode] = useState<"create" | "phrase" | "key">(
+    recovery ? "phrase" : "create",
+  );
   const [phrase, setPhrase] = useState("");
   const [secret, setSecret] = useState("");
   const [network, setNetwork] = useState<BlockchainNetwork>("ethereum");
@@ -49,13 +53,17 @@ export default function CreateWallet({
     }
   }
   return (
-    <Screen title="Create or import" onBack={onBack}>
+    <Screen
+      title={recovery ? "Recover wallet" : "Create or import"}
+      onBack={onBack}
+    >
       {replacingWallet && (
         <div className="notice error recovery-panel" role="alert">
           <strong>A locked wallet already exists on this browser.</strong>
           <p>
-            Creating or importing here replaces its encrypted local vault. Save
-            a copy first in case you later remember its passphrase.
+            {recovery
+              ? "Download a copy first. Recovering a wallet replaces this browser’s active encrypted vault."
+              : "Creating or importing here replaces its encrypted local vault. Save a copy first in case you later remember its passphrase."}
           </p>
           <button
             type="button"
@@ -70,24 +78,26 @@ export default function CreateWallet({
           </button>
         </div>
       )}
-      <label>
-        Wallet source
-        <select
-          value={mode}
-          disabled={busy}
-          onChange={(e) => {
-            setMode(e.target.value as typeof mode);
-            setPhrase("");
-            setSecret("");
-            setConfirm(false);
-            setError("");
-          }}
-        >
-          <option value="create">New recovery phrase</option>
-          <option value="phrase">Import recovery phrase</option>
-          <option value="key">Import private key</option>
-        </select>
-      </label>
+      {!recovery && (
+        <label>
+          Wallet source
+          <select
+            value={mode}
+            disabled={busy}
+            onChange={(e) => {
+              setMode(e.target.value as typeof mode);
+              setPhrase("");
+              setSecret("");
+              setConfirm(false);
+              setError("");
+            }}
+          >
+            <option value="create">New recovery phrase</option>
+            <option value="phrase">Import recovery phrase</option>
+            <option value="key">Import private key</option>
+          </select>
+        </label>
+      )}
       {mode === "create" ? (
         <>
           <button
@@ -143,11 +153,12 @@ export default function CreateWallet({
         </>
       )}
       <p className="notice">
-        Write down your recovery phrase or imported key. The local passphrase
-        encrypts this browser’s copy; it cannot recover a lost wallet.
+        {recovery
+          ? "Enter your original recovery words and choose a new local password for this browser."
+          : "Write down your recovery phrase or imported key. The local passphrase encrypts this browser’s copy; it cannot recover a lost wallet."}
       </p>
       <label>
-        Local vault passphrase
+        {recovery ? "New local vault passphrase" : "Local vault passphrase"}
         <input
           type="password"
           autoComplete="new-password"
@@ -156,6 +167,9 @@ export default function CreateWallet({
           onChange={(e) => setPassword(e.target.value)}
         />
       </label>
+      <p className="muted small">
+        At least 12 characters. Repeat the same password below.
+      </p>
       <label>
         Repeat passphrase
         <input
@@ -165,6 +179,11 @@ export default function CreateWallet({
           onChange={(e) => setRepeat(e.target.value)}
         />
       </label>
+      {repeat && password !== repeat && (
+        <p role="status" className="muted small">
+          Passphrases do not match.
+        </p>
+      )}
       <label className="check">
         <input
           type="checkbox"
@@ -190,13 +209,20 @@ export default function CreateWallet({
         disabled={
           busy ||
           password.length < 12 ||
+          password !== repeat ||
           !confirm ||
           (replacingWallet && !confirmReplacement) ||
           !(mode === "key" ? secret : phrase)
         }
         onClick={save}
       >
-        {busy ? "Encrypting…" : "Save encrypted wallet"}
+        {busy
+          ? recovery
+            ? "Recovering…"
+            : "Encrypting…"
+          : recovery
+            ? "Recover wallet"
+            : "Save encrypted wallet"}
       </button>
     </Screen>
   );

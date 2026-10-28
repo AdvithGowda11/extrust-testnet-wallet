@@ -878,8 +878,9 @@ test("locked wallet offers a safe create or phrase-recovery path", async ({
   await mockReads(context);
   await createWallet(page);
   await page.getByRole("button", { name: "Lock", exact: true }).click();
+  await page.getByText("Wallet help", { exact: true }).click();
   await page
-    .getByRole("button", { name: "Create or recover a different wallet" })
+    .getByRole("button", { name: "Create a different wallet", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Generate recovery phrase" }),
