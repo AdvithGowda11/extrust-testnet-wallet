@@ -162,6 +162,40 @@ test("six-network funding reports confirmed, pending and failed reads without ex
   await expect(page.locator(".wallet-home")).toBeVisible();
 });
 
+test("coin buttons stay centered under the pointer while pressed", async ({
+  page,
+  context,
+}) => {
+  await mockReads(context);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await createWallet(page);
+  const orbit = page.locator(".orbit-stage");
+  await orbit.scrollIntoViewIfNeeded();
+  for (const network of [
+    "solana",
+    "ethereum",
+    "polygon",
+    "binance",
+    "base",
+    "bitcoin",
+  ]) {
+    const tile = orbit.locator(`.network-tile.${network}`);
+    const before = await tile.boundingBox();
+    if (!before) throw new Error("Coin bounds unavailable");
+    await page.mouse.move(before.x + before.width / 2, before.y + 25);
+    await page.mouse.down();
+    const pressed = await tile.boundingBox();
+    if (!pressed) throw new Error("Pressed coin bounds unavailable");
+    expect(
+      Math.abs(pressed.x + pressed.width / 2 - before.x - before.width / 2),
+    ).toBeLessThan(1);
+    await page.mouse.up();
+    await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+      network,
+    );
+  }
+});
+
 test("coin selector accepts repeated left and right taps, drags, and keyboard input", async ({
   page,
   context,
@@ -213,6 +247,150 @@ test("coin selector accepts repeated left and right taps, drags, and keyboard in
     beforeKey,
   );
 });
+
+for (const imported of [false, true]) {
+  test(`coin wheel follows circular drags with ${imported ? "four imported" : "six"} networks`, async ({
+    page,
+    context,
+  }) => {
+    await mockReads(context);
+    await page.setViewportSize({ width: 375, height: 812 });
+    if (imported) {
+      await page.goto("/");
+      await page
+        .getByRole("button", { name: "Create or import wallet" })
+        .click();
+      await page.getByLabel("Wallet source").selectOption("key");
+      await page
+        .getByLabel("Private key", { exact: true })
+        .fill("01".repeat(32));
+      await page
+        .getByLabel("Local vault passphrase", { exact: true })
+        .fill(password);
+      await page.getByLabel("Repeat passphrase").fill(password);
+      await page.getByRole("checkbox").check();
+      await page.getByRole("button", { name: "Save encrypted wallet" }).click();
+      await expect(page.locator(".wallet-home")).toBeVisible();
+    } else {
+      await createWallet(page);
+    }
+    const orbit = page.locator(".orbit-stage");
+    await orbit.scrollIntoViewIfNeeded();
+    const networks = await orbit
+      .locator(".network-tile")
+      .evaluateAll((elements) =>
+        elements.map((e) => e.getAttribute("data-network")!),
+      );
+    expect(networks).toHaveLength(imported ? 4 : 6);
+    const initial = await page
+      .getByLabel("Network", { exact: true })
+      .inputValue();
+    const bounds = await orbit.boundingBox();
+    if (!bounds) throw new Error("Coin selector bounds unavailable");
+    const x = bounds.x + bounds.width / 2,
+      y = bounds.y + 140;
+    for (const direction of [1, -1]) {
+      await page.mouse.move(x, y - 102);
+      await page.mouse.down();
+      for (let i = 1; i <= 16; i += 1) {
+        const angle =
+          -Math.PI / 2 +
+          (direction * ((2 * Math.PI) / networks.length + 0.1) * i) / 16;
+        await page.mouse.move(
+          x + Math.cos(angle) * 102,
+          y + Math.sin(angle) * 102,
+        );
+      }
+      await page.mouse.up();
+      const expected =
+        direction === 1
+          ? networks[
+              (networks.indexOf(initial) - 1 + networks.length) %
+                networks.length
+            ]
+          : initial;
+      await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+        expected,
+      );
+      await page.waitForTimeout(350);
+      await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+        expected,
+      );
+    }
+    await orbit.locator(".network-tile.base").click();
+    await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+      "base",
+    );
+  });
+}
+
+test.describe("touch coin wheel", () => {
+  test.use({ hasTouch: true, viewport: { width: 375, height: 812 } });
+  test("touch taps and a circular swipe select once and allow the next tap", async ({
+    page,
+    context,
+  }) => {
+    await mockReads(context);
+    await createWallet(page);
+    const orbit = page.locator(".orbit-stage");
+    await orbit.scrollIntoViewIfNeeded();
+    for (const network of ["solana", "ethereum", "bitcoin"]) {
+      const coin = await orbit
+        .locator(`.network-tile.${network} .network-coin`)
+        .boundingBox();
+      if (!coin) throw new Error("Coin bounds unavailable");
+      await page.touchscreen.tap(
+        coin.x + coin.width / 2,
+        coin.y + coin.height / 2,
+      );
+      await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+        network,
+      );
+    }
+    const bounds = await orbit.boundingBox();
+    if (!bounds) throw new Error("Coin selector bounds unavailable");
+    const x = bounds.x + bounds.width / 2,
+      y = bounds.y + 140;
+    const touch = await context.newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x, y: y - 102 }],
+    });
+    for (let i = 1; i <= 16; i += 1) {
+      const angle = -Math.PI / 2 + ((Math.PI / 3 + 0.1) * i) / 16;
+      await touch.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+          { x: x + Math.cos(angle) * 102, y: y + Math.sin(angle) * 102 },
+        ],
+      });
+    }
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+      "solana",
+    );
+    await page.waitForTimeout(350);
+    await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+      "solana",
+    );
+    const bitcoin = await orbit
+      .locator(".network-tile.bitcoin .network-coin")
+      .boundingBox();
+    if (!bitcoin) throw new Error("Coin bounds unavailable");
+    await page.touchscreen.tap(
+      bitcoin.x + bitcoin.width / 2,
+      bitcoin.y + bitcoin.height / 2,
+    );
+    await expect(page.getByLabel("Network", { exact: true })).toHaveValue(
+      "bitcoin",
+    );
+    await touch.detach();
+  });
+});
+
 test("encrypted onboarding, six networks, lock/reload/unlock and accessible receive screen", async ({
   page,
   context,

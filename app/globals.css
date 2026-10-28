@@ -829,6 +829,9 @@ dd {
   background: transparent;
   box-shadow: none;
 }
+.network-tile:active {
+  transform: translateX(-50%) scale(0.98);
+}
 .network-tile:hover .network-coin {
   box-shadow: 0 7px 22px #39261f30;
 }

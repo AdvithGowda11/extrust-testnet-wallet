@@ -134,6 +134,8 @@ export default function WalletDashboard() {
     };
   }
   function handleOrbitPointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (!event.isPrimary || event.button !== 0) return;
+    ignoreOrbitClick.current = false;
     const target = event.target;
     if (target instanceof Element && target.closest(".tray-menu")) {
       orbitDrag.current = null;
@@ -174,13 +176,13 @@ export default function WalletDashboard() {
     if (delta < -Math.PI) delta += Math.PI * 2;
     drag.angle = angle;
     drag.distance += delta;
-    const step = Math.PI / 3;
+    const step = (2 * Math.PI) / availableNetworks.length;
     while (drag.distance >= step) {
-      rotateNetwork(1);
+      rotateNetwork(-1);
       drag.distance -= step;
     }
     while (drag.distance <= -step) {
-      rotateNetwork(-1);
+      rotateNetwork(1);
       drag.distance += step;
     }
   }
@@ -192,9 +194,6 @@ export default function WalletDashboard() {
       if (event.currentTarget.hasPointerCapture(event.pointerId))
         event.currentTarget.releasePointerCapture(event.pointerId);
       ignoreOrbitClick.current = true;
-      window.setTimeout(() => {
-        ignoreOrbitClick.current = false;
-      }, 0);
     }
   }
   const shortAddress = account?.address
