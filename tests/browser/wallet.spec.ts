@@ -354,14 +354,26 @@ test.describe("touch coin wheel", () => {
     const touch = await context.newCDPSession(page);
     await touch.send("Input.dispatchTouchEvent", {
       type: "touchStart",
-      touchPoints: [{ x, y: y - 102 }],
+      touchPoints: [{ id: 0, x, y: y - 102 }],
+    });
+    await orbit.dispatchEvent("pointerdown", {
+      pointerId: 999,
+      pointerType: "touch",
+      isPrimary: false,
+      button: 0,
+    });
+    await orbit.dispatchEvent("pointerup", {
+      pointerId: 999,
+      pointerType: "touch",
+      isPrimary: false,
+      button: 0,
     });
     for (let i = 1; i <= 16; i += 1) {
       const angle = -Math.PI / 2 + ((Math.PI / 3 + 0.1) * i) / 16;
       await touch.send("Input.dispatchTouchEvent", {
         type: "touchMove",
         touchPoints: [
-          { x: x + Math.cos(angle) * 102, y: y + Math.sin(angle) * 102 },
+          { id: 0, x: x + Math.cos(angle) * 102, y: y + Math.sin(angle) * 102 },
         ],
       });
     }

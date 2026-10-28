@@ -188,8 +188,8 @@ export default function WalletDashboard() {
   }
   function handleOrbitPointerEnd(event: PointerEvent<HTMLDivElement>) {
     const drag = orbitDrag.current;
-    orbitDrag.current = null;
     if (!drag || drag.pointerId !== event.pointerId) return;
+    orbitDrag.current = null;
     if (drag.dragging) {
       if (event.currentTarget.hasPointerCapture(event.pointerId))
         event.currentTarget.releasePointerCapture(event.pointerId);
